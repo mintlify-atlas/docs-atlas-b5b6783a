@@ -1,0 +1,415 @@
+---
+title: 'Annotations'
+description: 'Understanding JSON Schema annotation system and metadata'
+---
+
+## What are Annotations?
+
+JSON Schema can annotate an instance with information whenever the instance validates against the schema object containing the annotation. This information can be a simple value or calculated based on the instance contents.
+
+<Info>
+Annotations are attached to specific locations in an instance. Unlike assertions, annotation data doesn't cause validation to fail - it provides metadata for applications to use as they see fit.
+</Info>
+
+## How Annotations Work
+
+Annotations are produced by keywords whenever:
+
+1. The instance validates successfully against the keyword's schema
+2. All parent schema objects also validate successfully
+3. Validation hasn't been short-circuited by a failed assertion
+
+```json
+{
+  "title": "Product Name",
+  "description": "The name of the product in the catalog",
+  "type": "string",
+  "default": "Untitled Product",
+  "examples": ["Widget", "Gadget", "Gizmo"]
+}
+```
+
+All of these keywords produce annotations:
+- `title` → "Product Name"
+- `description` → "The name of the product in the catalog"
+- `default` → "Untitled Product"
+- `examples` → ["Widget", "Gadget", "Gizmo"]
+
+<Note>
+JSON Schema implementations are not expected to make use of collected annotations on behalf of applications. Applications receive the annotation data and decide how to use it.
+</Note>
+
+## Annotation Collection
+
+A collected annotation MUST include:
+
+- **Keyword name** - The keyword that produced the annotation
+- **Instance location** - Where it's attached (as a JSON Pointer)
+- **Evaluation path** - How reference keywords like `$ref` were followed
+- **Schema location** - The absolute IRI of the keyword (may be omitted if same as evaluation path)
+- **Annotation value** - The attached value(s)
+
+### Annotation Values
+
+Unless otherwise specified, a keyword's annotation value is the value of the keyword itself:
+
+```json
+{
+  "title": "User",
+  "description": "A user account"
+}
+```
+
+The `title` keyword produces annotation value `"User"` and `description` produces `"A user account"`.
+
+Some keywords produce calculated annotation values based on what was evaluated:
+
+```json
+{
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer" }
+  }
+}
+```
+
+The `properties` keyword produces an annotation containing the set of property names that were successfully evaluated: `["name", "age"]` (assuming both properties were present in the instance).
+
+## Annotations and Validation
+
+Schema objects that produce a **false assertion result** MUST NOT produce any annotation results, whether from their own keywords or from keywords in subschemas.
+
+<Tabs>
+  <Tab title="Schema">
+    ```json
+    {
+      "oneOf": [
+        {
+          "title": "Integer Value",
+          "type": "integer"
+        },
+        {
+          "title": "String Value",
+          "type": "string"
+        }
+      ]
+    }
+    ```
+  </Tab>
+  <Tab title="Instance: hello">
+    Against the instance `"hello"`:
+    
+    - First schema fails (`type: integer`)
+    - Title annotation "Integer Value" is **discarded**
+    - Second schema passes (`type: string`)
+    - Title annotation "String Value" is **kept**
+    
+    Result: Only "String Value" annotation is collected.
+  </Tab>
+  <Tab title="Instance: 42">
+    Against the instance `42`:
+    
+    - First schema passes (`type: integer`)
+    - Title annotation "Integer Value" is **kept**
+    - Second schema fails (`type: string`)
+    - Title annotation "String Value" is **discarded**
+    
+    Result: Only "Integer Value" annotation is collected.
+  </Tab>
+</Tabs>
+
+<Warning>
+When collecting annotations, short-circuit evaluation is not possible. All applicable subschemas must be examined, even if they cannot change the overall assertion result.
+</Warning>
+
+## Common Annotation Keywords
+
+JSON Schema defines several standard annotation keywords:
+
+### Metadata Annotations
+
+**`title`** - A short, human-readable title:
+
+```json
+{
+  "title": "Product",
+  "type": "object"
+}
+```
+
+**`description`** - A longer explanation of the purpose:
+
+```json
+{
+  "description": "A product available in the online catalog",
+  "type": "object"
+}
+```
+
+**`default`** - A default value for the instance:
+
+```json
+{
+  "type": "string",
+  "default": "guest"
+}
+```
+
+<Info>
+It is RECOMMENDED that a default value be valid against the associated schema.
+</Info>
+
+**`examples`** - Sample values demonstrating usage:
+
+```json
+{
+  "type": "string",
+  "examples": ["alice", "bob", "charlie"]
+}
+```
+
+**`deprecated`** - Indicates the instance is deprecated:
+
+```json
+{
+  "type": "string",
+  "deprecated": true
+}
+```
+
+A `true` value indicates applications SHOULD refrain from using this property as it may be removed in the future.
+
+### Usage Annotations
+
+**`readOnly`** - Indicates the value is managed by the owning authority:
+
+```json
+{
+  "type": "integer",
+  "readOnly": true,
+  "description": "Database-generated ID"
+}
+```
+
+Attempts to modify read-only values should be ignored or rejected.
+
+**`writeOnly`** - Indicates the value is never present when retrieved:
+
+```json
+{
+  "type": "string",
+  "writeOnly": true,
+  "description": "User password"
+}
+```
+
+Write-only values can be sent to create/update but won't be included in responses.
+
+<Note>
+These keywords can assist in UI generation. For example, an application may hide input for write-only fields as they are typed.
+</Note>
+
+### Format Annotations
+
+**`format`** - Provides semantic information about string values:
+
+```json
+{
+  "type": "string",
+  "format": "email"
+}
+```
+
+Common format values include:
+- `date-time` - RFC 3339 date-time
+- `date` - RFC 3339 full-date
+- `time` - RFC 3339 full-time
+- `email` - RFC 5321 email address
+- `hostname` - RFC 1123 hostname
+- `ipv4` / `ipv6` - IP addresses
+- `uri` / `uri-reference` - URI references
+- `uuid` - UUID string
+
+### Content Annotations
+
+For string-encoded data:
+
+**`contentEncoding`** - How the string is encoded:
+
+```json
+{
+  "type": "string",
+  "contentEncoding": "base64"
+}
+```
+
+**`contentMediaType`** - The media type of the content:
+
+```json
+{
+  "type": "string",
+  "contentMediaType": "application/json"
+}
+```
+
+**`contentSchema`** - A schema for the decoded content:
+
+```json
+{
+  "type": "string",
+  "contentEncoding": "base64",
+  "contentMediaType": "application/json",
+  "contentSchema": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string" }
+    }
+  }
+}
+```
+
+## Practical Uses of Annotations
+
+Annotations enable various application behaviors:
+
+### Documentation Generation
+
+Use `title`, `description`, and `examples` to generate human-readable documentation:
+
+```json
+{
+  "title": "User Profile",
+  "description": "Represents a user's public profile information",
+  "type": "object",
+  "properties": {
+    "username": {
+      "title": "Username",
+      "description": "Unique identifier for the user",
+      "type": "string",
+      "minLength": 3,
+      "examples": ["alice", "bob123"]
+    }
+  }
+}
+```
+
+### UI Form Generation
+
+<Tabs>
+  <Tab title="Schema">
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "title": "Email Address"
+        },
+        "password": {
+          "type": "string",
+          "writeOnly": true,
+          "title": "Password",
+          "minLength": 8
+        },
+        "newsletter": {
+          "type": "boolean",
+          "title": "Subscribe to newsletter",
+          "default": false
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Generated UI">
+    Applications can use annotations to generate appropriate form controls:
+    
+    - `email` → Text input with email validation
+    - `password` → Password input (masked)
+    - `newsletter` → Checkbox (default unchecked)
+    
+    Titles become field labels, and defaults pre-populate values.
+  </Tab>
+</Tabs>
+
+### Default Values
+
+Applications can use `default` annotations to fill in missing values:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "theme": {
+      "type": "string",
+      "enum": ["light", "dark", "auto"],
+      "default": "auto"
+    },
+    "pageSize": {
+      "type": "integer",
+      "minimum": 10,
+      "maximum": 100,
+      "default": 25
+    }
+  }
+}
+```
+
+An empty object `{}` can be filled with defaults: `{"theme": "auto", "pageSize": 25}`.
+
+### API Documentation
+
+Combine multiple annotation keywords for rich API documentation:
+
+```json
+{
+  "type": "object",
+  "title": "Create Product Request",
+  "description": "Request body for creating a new product",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Product name as displayed to customers",
+      "minLength": 1,
+      "maxLength": 100,
+      "examples": ["Premium Widget", "Deluxe Gadget"]
+    },
+    "price": {
+      "type": "number",
+      "description": "Price in USD",
+      "minimum": 0,
+      "examples": [19.99, 99.99]
+    },
+    "sku": {
+      "type": "string",
+      "description": "Internal stock keeping unit",
+      "readOnly": true,
+      "examples": ["PROD-001", "PROD-002"]
+    }
+  },
+  "required": ["name", "price"]
+}
+```
+
+## Multiple Annotation Values
+
+Since many subschemas can apply to a single instance location, applications may receive multiple annotation values for the same keyword.
+
+```json
+{
+  "allOf": [
+    { "title": "Base Schema" },
+    { "title": "Extended Schema" }
+  ]
+}
+```
+
+Applications must decide how to handle multiple values:
+- Use the most specific value (from innermost schema)
+- Combine all values
+- Use the first or last value encountered
+- Consider it an error
+
+<Info>
+JSON Schema provides the schema location (evaluation path) with each annotation to help applications distinguish among multiple values.
+</Info>

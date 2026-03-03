@@ -1,0 +1,375 @@
+---
+title: 'Core Specification'
+description: 'Fundamental concepts and keywords defined in the JSON Schema Core specification'
+---
+
+## Overview
+
+The JSON Schema Core specification defines the fundamental keywords and concepts that form the foundation of JSON Schema. This specification establishes the essential mechanisms for schema identification, referencing, and evaluation.
+
+JSON Schema is a declarative language for validating and annotating JSON documents. A schema represents a set of constraints and annotations that are applied to a JSON value, using keywords declared within the schema.
+
+<Info>
+The Core specification defines keywords that **MUST** be supported by any implementation. These keywords are prefixed with a dollar sign (`$`) to emphasize their required nature.
+</Info>
+
+## Schema Documents
+
+A JSON Schema document (or simply a schema) is used to describe an instance. A schema can itself be interpreted as an instance.
+
+**A JSON Schema MUST be an object or a boolean.**
+
+### Boolean Schemas
+
+- `true`: Always passes validation (equivalent to an empty schema `{}`)
+- `false`: Always fails validation (equivalent to `{ "not": {} }`)
+
+```json
+true   // Allows any JSON value
+false  // Rejects any JSON value
+```
+
+### Schema Objects
+
+Object properties that are applied to the instance are called **keywords**. Keywords fall into five categories:
+
+- **Identifiers**: Control schema identification and base IRI determination
+- **Assertions**: Produce a boolean result when applied to an instance
+- **Annotations**: Attach information to an instance for application use
+- **Applicators**: Apply subschemas to instance locations and combine results
+- **Reserved locations**: Reserve space for specific purposes to ensure interoperability
+
+## Instance Data Model
+
+JSON Schema interprets documents according to a data model with six primitive types:
+
+- **null**: A JSON "null" value
+- **boolean**: A "true" or "false" value
+- **object**: An unordered set of properties mapping strings to instances
+- **array**: An ordered list of instances
+- **number**: An arbitrary-precision, base-10 decimal number
+- **string**: A string of Unicode code points
+
+<Note>
+JSON Schema extensions may define additional types (like "integer"), but these six types form the core data model.
+</Note>
+
+## Core Keywords
+
+### Schema Identification
+
+<Accordion title="$schema - Declare Schema Dialect">
+The `$schema` keyword identifies the dialect and meta-schema for the schema document.
+
+**Value**: MUST be an IRI (containing a scheme) and MUST be normalized.
+
+**Usage**: Should be used in the document root schema object.
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "type": "object"
+}
+```
+
+The `$schema` keyword serves two purposes:
+1. Identifies the JSON Schema dialect being used
+2. References a meta-schema that describes valid schema syntax
+</Accordion>
+
+<Accordion title="$id - Define Schema Resource Identifier">
+The `$id` keyword identifies a schema resource and establishes a base IRI for relative references.
+
+**Value**: MUST be a string representing a valid IRI reference without a fragment.
+
+```json
+{
+  "$id": "https://example.com/schemas/person.json",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" }
+  }
+}
+```
+
+**Key Points**:
+- The root schema SHOULD contain an `$id` with an absolute IRI
+- `$id` establishes the base IRI for resolving relative references
+- Multiple schemas can be embedded in a single document using `$id`
+</Accordion>
+
+<Accordion title="$anchor - Location-Independent Identifiers">
+The `$anchor` keyword defines plain name fragment identifiers for subschemas.
+
+**Value**: MUST be a string conforming to the NCName production (alphanumeric, underscore, hyphen, period).
+
+```json
+{
+  "$id": "https://example.com/schemas/address.json",
+  "type": "object",
+  "$defs": {
+    "usAddress": {
+      "$anchor": "us-address",
+      "type": "object",
+      "properties": {
+        "state": { "type": "string" },
+        "zip": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
+Reference using: `"$ref": "https://example.com/schemas/address.json#us-address"`
+
+**Benefit**: Allows subschemas to be relocated without updating references.
+</Accordion>
+
+<Accordion title="$dynamicAnchor - Dynamic Scope Identifiers">
+The `$dynamicAnchor` keyword defines identifiers within the dynamic scope of schema evaluation.
+
+**Value**: MUST be a string.
+
+**Usage**: Used with `$dynamicRef` for advanced schema extension patterns.
+
+```json
+{
+  "$id": "https://example.com/meta",
+  "$dynamicAnchor": "meta",
+  "type": "object"
+}
+```
+
+This is an advanced feature primarily used in meta-schema design.
+</Accordion>
+
+### Schema References
+
+<Accordion title="$ref - Direct Schema References">
+The `$ref` keyword references a statically identified schema to be applied to the instance.
+
+**Value**: MUST be a string which is an IRI reference.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "billingAddress": { "$ref": "#/$defs/address" },
+    "shippingAddress": { "$ref": "#/$defs/address" }
+  },
+  "$defs": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
+**Reference Formats**:
+- `#/$defs/address` - Within the same document
+- `other-schema.json` - Relative URI
+- `https://example.com/schema.json#/definitions/name` - Absolute URI with fragment
+</Accordion>
+
+<Accordion title="$dynamicRef - Dynamic Schema References">
+The `$dynamicRef` keyword references schemas using dynamic scope resolution.
+
+**Value**: MUST be a string which is an IRI reference.
+
+**Usage**: Works with `$dynamicAnchor` to enable runtime schema resolution based on the evaluation path.
+
+```json
+{
+  "$ref": "https://example.com/meta",
+  "properties": {
+    "items": {
+      "$dynamicRef": "#meta"
+    }
+  }
+}
+```
+
+This allows extending schemas while maintaining references to the extended version.
+</Accordion>
+
+### Reserved Locations
+
+<Accordion title="$defs - Schema Definitions">
+The `$defs` keyword reserves a location for reusable schema components.
+
+**Value**: MUST be an object where each value is a valid schema.
+
+```json
+{
+  "$defs": {
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "age": { "$ref": "#/$defs/positiveInteger" },
+    "contact": { "$ref": "#/$defs/email" }
+  }
+}
+```
+
+<Note>
+The `$defs` keyword does not directly affect validation—it simply reserves a location for definitions that can be referenced elsewhere.
+</Note>
+</Accordion>
+
+<Accordion title="$comment - Developer Comments">
+The `$comment` keyword reserves a location for comments from schema authors to readers or maintainers.
+
+**Value**: MUST be a string.
+
+```json
+{
+  "$comment": "This schema validates user profiles for the v2 API",
+  "type": "object",
+  "properties": {
+    "userId": {
+      "$comment": "TODO: Consider making this a UUID instead of integer",
+      "type": "integer"
+    }
+  }
+}
+```
+
+**Key Points**:
+- Has no effect on validation or annotation
+- Not intended for end-user documentation (use `title` or `description` instead)
+- Can be placed anywhere in the schema
+</Accordion>
+
+## Lexical and Dynamic Scope
+
+### Lexical Scope
+
+The lexical scope is determined by the nested JSON data structure. Keywords like `$id` and `$ref` may resolve values against the lexical structure of the document.
+
+```json
+{
+  "$id": "https://example.com/root",
+  "properties": {
+    "nested": {
+      "$id": "nested-schema",
+      "type": "string"
+    }
+  }
+}
+```
+
+The nested schema's absolute IRI is: `https://example.com/nested-schema`
+
+### Dynamic Scope
+
+The dynamic scope is the ordered collection of schema resources navigated during evaluation, starting at the root and ending at the current schema.
+
+Dynamic scope differs from lexical scope when references are involved. The evaluation path (including `$ref` traversals) determines the dynamic scope.
+
+<Info>
+Dynamic scope is primarily used with `$dynamicRef` and `$dynamicAnchor`—an advanced feature that should be used with caution.
+</Info>
+
+## Keyword Behaviors
+
+### Assertions
+
+Assertions validate that an instance satisfies constraints, producing a boolean result.
+
+- `true` if constraints are satisfied
+- `false` otherwise
+
+### Annotations
+
+Annotations attach information to instance locations for application use.
+
+**Collection Rules**:
+- Annotations are collected from schemas that pass validation
+- Schema objects that produce `false` assertion results MUST NOT produce annotations
+- Applications decide how to use annotation data
+
+### Applicators
+
+Applicators apply subschemas to instance locations and combine their results.
+
+**Examples from Core**:
+- `$ref` - Applies a referenced schema
+- `$dynamicRef` - Applies a dynamically referenced schema
+
+<Note>
+The Validation specification defines additional applicators like `allOf`, `anyOf`, `oneOf`, `not`, `if`/`then`/`else`, and keywords for arrays and objects.
+</Note>
+
+## Meta-Schemas
+
+A meta-schema is a schema that describes valid schema syntax. Meta-schemas:
+
+- Validate JSON Schema documents
+- Specify the set of keywords available
+- Define the dialect being used
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "$id": "https://json-schema.org/v1/2026",
+  "title": "JSON Schema Core and Validation specification meta-schema",
+  "type": ["object", "boolean"]
+}
+```
+
+## Fragment Identifiers
+
+JSON Schema uses two fragment identifier structures:
+
+### JSON Pointers
+
+Fragments starting with `/` or empty string are interpreted as JSON Pointers.
+
+```
+https://example.com/schema.json#/properties/name
+```
+
+### Plain Name Fragments
+
+All other fragments are plain name identifiers (defined by `$anchor`).
+
+```
+https://example.com/schema.json#addressDefinition
+```
+
+## Specification Versioning
+
+JSON Schema is identified by version (v) and release year.
+
+- **v1/2026** - Version 1, released in 2026
+- Schemas written for a version are compatible with later releases within the same version
+- Future releases maintain backward compatibility within a version
+
+<Info>
+For the complete Core specification, visit [json-schema.org](https://json-schema.org/)
+</Info>
+
+## Extension Guidelines
+
+Additional keywords MAY be defined by any entity:
+
+- Extension keywords MUST NOT modify the operation of core keywords
+- Extension keywords MUST NOT begin with `$` (reserved for core)
+- Keywords beginning with `x-` are implicitly defined as annotation keywords
+- Implementations MUST refuse to evaluate schemas with unrecognized keywords
+
+<Note>
+**Important**: Save for explicit agreement, schema authors should not expect custom extension keywords to be supported by all implementations.
+</Note>

@@ -1,0 +1,148 @@
+---
+title: Contributing Guidelines
+description: How to contribute to the JSON Schema project
+---
+
+Thanks for taking the time to contribute to JSON Schema!
+
+## Overview
+
+JSON Schema is an evolving language, and the specification repository contains both the specification text and Pull Requests with suggested improvements and contributions.
+
+## Types of Contributions
+
+### Editorial Contributions
+
+Contributions that **do not change the interpretation** of the spec are encouraged and often merged quickly:
+
+- Improving legibility
+- Fixing editorial errors
+- Clearing up ambiguity
+- Improving examples
+
+<Info>
+Editorial contributions can be merged by a spec editor with minimal process.
+</Info>
+
+### Specification Changes
+
+Contributions that **meaningfully change the interpretation** of the spec must follow the [Specification Development Process](/process/overview).
+
+<Warning>
+Changes affecting implementation behavior should typically be opened as an issue first, not directly as a pull request.
+</Warning>
+
+## Submitting Issues
+
+Issues should identify:
+- A problem, enhancement, or use case
+- A proposed course of action for the draft
+
+### Support Channels
+
+For questions and support (rather than issues), see the [SUPPORT.md](https://github.com/json-schema-org/.github/blob/main/SUPPORT.md) file.
+
+## Creating Pull Requests
+
+### General Guidelines
+
+<Steps>
+  <Step title="Target the correct branch">
+    Pull requests should generally be made to the **`main` branch**.
+    
+    **Exception**: During a patch phase, target the patch branch (e.g., `2020-12-patch`) instead.
+  </Step>
+
+  <Step title="Reference related issues">
+    If the pull request would solve a particular issue, reference the issue in the PR description.
+  </Step>
+
+  <Step title="Wait for review">
+    Most PRs, including all PRs that impact implementation behavior, will be left open for a **minimum of 14 days**.
+    
+    <Note>
+    Minor wording fixes may be merged more quickly once approved by a project member.
+    </Note>
+  </Step>
+</Steps>
+
+### What to Contribute
+
+<CardGroup cols={2}>
+  <Card title="Editorial Suggestions" icon="pen">
+    Improvements to clarity, grammar, and examples that don't change behavior
+  </Card>
+  <Card title="Issue Resolutions" icon="check">
+    Pull requests that resolve open issues in the repository
+  </Card>
+</CardGroup>
+
+## Milestones
+
+Milestones help organize the specification development work:
+
+- Each milestone estimates work for the next draft
+- Named after the meta-schema draft number
+- The **open milestone with the lowest draft number** is the current active project
+
+### Milestone Management
+
+Issues may be removed from a milestone due to:
+- Lack of consensus
+- Lack of expertise to create a PR
+- Deferral to publish a draft sooner
+
+<Info>
+The `draft-future` milestone is for issues that should be addressed but have no specific timeline.
+</Info>
+
+Numbered milestones other than the lowest-numbered one tentatively organize future work but may be reorganized when work begins.
+
+## Community Guidelines
+
+### Code of Conduct
+
+All official channels follow the [Code of Conduct](https://github.com/json-schema-org/.github/blob/main/CODE_OF_CONDUCT.md), including:
+- Mailing list
+- GitHub organization
+- Slack server
+
+### Communication Channels
+
+You can interact with the community through:
+
+<CardGroup cols={2}>
+  <Card title="Slack Workspace" icon="slack">
+    Join the `#specification` channel at [json-schema.org/slack](https://json-schema.org/slack) to:
+    - Interact with community members
+    - Share new ideas
+    - Ask questions about specification development
+  </Card>
+  <Card title="GitHub Issues" icon="github">
+    Use the [issues tracker](https://github.com/json-schema-org/json-schema-spec/issues) for:
+    - Reporting problems
+    - Proposing enhancements
+    - Discussing specification changes
+  </Card>
+</CardGroup>
+
+## Architectural Decision Records (ADRs)
+
+JSON Schema uses ADRs to document architectural decisions. When contributing features that require architectural decisions:
+
+- Use the ADR template from the `adr/template.md` file
+- Follow the MADR format (More information at [adr.github.io/madr](https://adr.github.io/madr/))
+- Include context, considered options, and decision rationale
+
+<Note>
+ADRs are stored in the `adr/` directory and become part of the permanent record when features become stable.
+</Note>
+
+## Getting Help
+
+If you have questions about contributing:
+
+1. Check the [Specification Development Process](/process/overview) documentation
+2. Review existing [proposals](/process/proposals) for examples
+3. Ask in the `#specification` Slack channel
+4. Reference the [SUPPORT.md](https://github.com/json-schema-org/.github/blob/main/SUPPORT.md) for additional resources

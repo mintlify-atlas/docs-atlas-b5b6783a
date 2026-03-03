@@ -1,0 +1,252 @@
+---
+title: 'Schemas'
+description: 'Understanding JSON Schema structure and representation'
+---
+
+## What is a Schema?
+
+A JSON Schema document, or simply a schema, is used to describe an instance. A schema can itself be interpreted as an instance, making JSON Schema self-descriptive.
+
+<Note>
+A JSON Schema MUST be an object or a boolean.
+</Note>
+
+### Schema Objects and Keywords
+
+When a schema is an object, its properties are called **keywords** (or schema keywords). Keywords broadly fall into five categories:
+
+- **Identifiers**: Control schema identification through setting an IRI for the schema and/or changing how the base IRI is determined
+- **Assertions**: Produce a boolean result when applied to an instance
+- **Annotations**: Attach information to an instance for application use
+- **Applicators**: Apply one or more subschemas to a particular location in the instance, and combine or modify their results
+- **Reserved locations**: Do not directly affect results, but reserve a place for a specific purpose to ensure interoperability
+
+<Info>
+Keywords which are properties within the same schema object are referred to as **adjacent keywords**.
+</Info>
+
+### Boolean Schemas
+
+The boolean schema values `true` and `false` are trivial schemas that always produce themselves as assertion results, regardless of the instance value.
+
+- `true`: Always passes validation, as if the empty schema `{}`
+- `false`: Always fails validation, as if the schema `{ "not": {} }`
+
+```json
+// This schema accepts everything
+true
+
+// This schema rejects everything
+false
+```
+
+While the empty schema object `{}` is unambiguous, there are many possible equivalents to the `false` schema. Using boolean values ensures that the intent is clear to both human readers and implementations.
+
+## Core Schema Keywords
+
+Three essential keywords identify and describe schemas:
+
+### The `$schema` Keyword
+
+The `$schema` keyword is both used as a JSON Schema dialect identifier and as the identifier of a resource which is itself a JSON Schema (a meta-schema).
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/next/schema",
+  "type": "object"
+}
+```
+
+<Warning>
+The `$schema` keyword SHOULD be used in the document root schema object, and MAY be used in the root schema objects of embedded schema resources. It MUST NOT appear in subschemas.
+</Warning>
+
+The value of this keyword MUST be an IRI (containing a scheme) and this IRI MUST be normalized.
+
+### The `$id` Keyword
+
+An `$id` keyword in a schema identifies that schema as a distinct schema resource. The value MUST be a string representing a valid IRI reference without a fragment.
+
+```json
+{
+  "$id": "https://example.com/schemas/person.json",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer" }
+  }
+}
+```
+
+<Info>
+The root schema of a JSON Schema document SHOULD contain an `$id` keyword with an absolute IRI (containing a scheme, but no fragment).
+</Info>
+
+The `$id` keyword serves multiple purposes:
+- Identifies the schema resource with a canonical IRI
+- Establishes the base IRI for relative references within the schema
+- Enables references from other schemas
+
+### The `$vocabulary` Keyword
+
+The `$vocabulary` keyword is used in meta-schemas to declare which vocabularies are available for use. Its value MUST be an object where each key is a vocabulary IRI and each value is a boolean.
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/next/schema",
+  "$id": "https://json-schema.org/draft/next/schema",
+  "$vocabulary": {
+    "https://json-schema.org/draft/next/vocab/core": true,
+    "https://json-schema.org/draft/next/vocab/applicator": true,
+    "https://json-schema.org/draft/next/vocab/validation": true,
+    "https://json-schema.org/draft/next/vocab/meta-data": true,
+    "https://json-schema.org/draft/next/vocab/format-annotation": true,
+    "https://json-schema.org/draft/next/vocab/content": true
+  }
+}
+```
+
+A value of `true` indicates the vocabulary is required, while `false` indicates it is optional.
+
+## Meta-Schemas
+
+A **meta-schema** is a schema that describes other schemas. Meta-schemas are used to:
+
+1. Validate JSON Schemas
+2. Specify the set of keywords those schemas are using
+3. Define the dialect of JSON Schema being used
+
+<Tabs>
+  <Tab title="Meta-Schema Example">
+    The official JSON Schema meta-schema defines the structure of valid schemas:
+
+    ```json
+    {
+      "$schema": "https://json-schema.org/draft/next/schema",
+      "$id": "https://json-schema.org/draft/next/schema",
+      "$vocabulary": {
+        "https://json-schema.org/draft/next/vocab/core": true,
+        "https://json-schema.org/draft/next/vocab/applicator": true,
+        "https://json-schema.org/draft/next/vocab/validation": true
+      },
+      "title": "Core and Validation specifications meta-schema",
+      "type": ["object", "boolean"]
+    }
+    ```
+  </Tab>
+  <Tab title="Using a Meta-Schema">
+    Every schema has a meta-schema, which can be explicitly declared using `$schema`:
+
+    ```json
+    {
+      "$schema": "https://json-schema.org/draft/next/schema",
+      "$id": "https://example.com/product-schema",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "integer" },
+        "productName": { "type": "string" }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Dialect Determination
+
+When evaluation encounters a new schema resource, the dialect is determined using these prioritized steps:
+
+1. **The `$schema` keyword** - Implementations MUST process the schema according to the dialect it declares
+2. **Parent schema dialect** - An embedded schema resource without `$schema` uses the same dialect as its parent
+3. **External context** - Default dialect from media type or embedding document
+4. **User configuration** - Implementation-specific dialect configuration
+
+If the dialect cannot be determined, the implementation MUST refuse to process the schema.
+
+## Root Schemas, Subschemas, and Resources
+
+A **root schema** is the top-level schema identified by an absolute IRI. It comprises the entire JSON document, recursively including all of its subschemas.
+
+```json
+{
+  "$id": "https://example.com/root.json",
+  "title": "root",
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "title": "array item",
+        "type": "string"
+      }
+    }
+  }
+}
+```
+
+In this example:
+- The schema with title "root" is the **root schema**
+- The schema with title "array item" is a **subschema**
+- Both the root and any subschemas can be objects or booleans
+
+<Note>
+Some keywords take schemas themselves, allowing JSON Schemas to be nested. The schema titled "array item" is a subschema of the root schema.
+</Note>
+
+### Embedded Schema Resources
+
+A JSON Schema document can contain multiple schema resources. An embedded resource is identified by an `$id` keyword within the document:
+
+```json
+{
+  "$id": "https://example.com/root.json",
+  "type": "object",
+  "properties": {
+    "user": {
+      "$id": "https://example.com/user.json",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
+Here, `https://example.com/user.json` is an embedded schema resource within the root resource.
+
+## Schema Structure Example
+
+Here's a complete example showing schema structure with identification:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/next/schema",
+  "$id": "https://example.com/product.json",
+  "title": "Product",
+  "description": "A product in the catalog",
+  "type": "object",
+  "properties": {
+    "productId": {
+      "description": "The unique identifier for a product",
+      "type": "integer"
+    },
+    "productName": {
+      "description": "Name of the product",
+      "type": "string"
+    },
+    "price": {
+      "description": "The price of the product",
+      "type": "number",
+      "minimum": 0
+    }
+  },
+  "required": ["productId", "productName", "price"]
+}
+```
+
+This schema:
+- Declares its dialect with `$schema`
+- Identifies itself with `$id`
+- Uses annotation keywords (`title`, `description`)
+- Uses assertion keywords (`type`, `minimum`, `required`)
+- Uses applicator keywords (`properties`)

@@ -1,0 +1,360 @@
+---
+title: "Understanding JSON Schema"
+description: "A guide to understanding JSON Schema basics with examples and tutorials"
+---
+
+## What is a Schema?
+
+A JSON Schema document, or simply a schema, is used to describe an instance. A schema can itself be interpreted as an instance.
+
+**A JSON Schema MUST be an object or a boolean.**
+
+Schema evaluation is a recursive process. Some keywords contain one or more subschemas, which allows you to create complex constraints or describe compound values like arrays and objects. For example, to describe a JSON object, a schema can use the `type` keyword to declare that the value MUST be an object, and the `properties` keyword to apply separate schemas to each of the object's properties.
+
+## Schema Keywords
+
+Object properties that are applied to the instance are called keywords, or schema keywords. Broadly speaking, keywords fall into one of five categories:
+
+- **Identifiers** - Control schema identification through setting a IRI for the schema and/or changing how the base IRI is determined
+- **Assertions** - Produce a boolean result when applied to an instance
+- **Annotations** - Attach information to an instance for application use
+- **Applicators** - Apply one or more subschemas to an instance and combine their results
+- **Reserved locations** - Do not directly affect results but reserve a location in the schema
+
+## The `type` Keyword
+
+The `type` keyword is one of the most fundamental validation keywords. The value of this keyword MUST be either a string or an array.
+
+String values MUST be one of the six primitive types:
+- `"null"`
+- `"boolean"`
+- `"object"`
+- `"array"`
+- `"number"`
+- `"string"`
+- `"integer"` (matches any number with a zero fractional part)
+
+If the value of `type` is a string, then an instance validates successfully if its type matches the type represented by the value of the string.
+
+### Example: String Type
+
+```json
+{ "type": "string" }
+```
+
+This schema validates:
+- `"hello"` ✓
+- `""` ✓ (empty string)
+
+This schema does NOT validate:
+- `42` ✗ (number)
+- `true` ✗ (boolean)
+- `null` ✗ (null)
+
+### Example: Multiple Types
+
+If the value of `type` is an array, then an instance validates successfully if its type matches any of the types indicated by the strings in the array.
+
+```json
+{ "type": ["string", "number"] }
+```
+
+This schema validates:
+- `"hello"` ✓
+- `42` ✓
+- `3.14` ✓
+
+This schema does NOT validate:
+- `true` ✗ (boolean)
+- `null` ✗ (null)
+
+## Validating Objects
+
+To describe a JSON object, you can use several keywords together:
+
+### The `properties` Keyword
+
+The `properties` keyword allows you to apply separate schemas to each of the object's properties.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer" },
+    "email": { "type": "string" }
+  }
+}
+```
+
+This schema validates objects where:
+- `name` (if present) must be a string
+- `age` (if present) must be an integer
+- `email` (if present) must be a string
+
+<Note>
+By default, all properties are optional. The object `{}` would validate against this schema.
+</Note>
+
+### The `required` Keyword
+
+To make certain properties mandatory, use the `required` keyword:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "email": { "type": "string" }
+  },
+  "required": ["name", "email"]
+}
+```
+
+Now both `name` and `email` are required properties.
+
+This validates:
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+```
+
+This does NOT validate:
+```json
+{
+  "name": "John Doe"
+}
+```
+(Missing required `email` property)
+
+## Validating Arrays
+
+Arrays can be validated using the `items` keyword to apply a schema to array elements.
+
+### Example: Array of Strings
+
+```json
+{
+  "type": "array",
+  "items": { "type": "string" }
+}
+```
+
+This validates:
+```json
+["apple", "banana", "cherry"]
+```
+
+This does NOT validate:
+```json
+["apple", 42, "cherry"]
+```
+(Contains a number)
+
+### Example: Array of Objects
+
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string" },
+      "age": { "type": "integer" }
+    },
+    "required": ["name"]
+  }
+}
+```
+
+This validates:
+```json
+[
+  { "name": "Alice", "age": 30 },
+  { "name": "Bob" }
+]
+```
+
+## Constant and Enumerated Values
+
+### The `const` Keyword
+
+The value of this keyword MAY be of any type, including null. An instance validates successfully against this keyword if its value is equal to the value of the keyword.
+
+```json
+{ "const": "fixed-value" }
+```
+
+Only validates:
+- `"fixed-value"` ✓
+
+### The `enum` Keyword
+
+The value of this keyword MUST be an array. An instance validates successfully against this keyword if its value is equal to one of the elements in this keyword's array value.
+
+```json
+{
+  "enum": ["red", "green", "blue"]
+}
+```
+
+This validates:
+- `"red"` ✓
+- `"green"` ✓
+- `"blue"` ✓
+
+This does NOT validate:
+- `"yellow"` ✗
+
+<Info>
+Elements in the array might be of any type, including null.
+</Info>
+
+## Numeric Validation
+
+### The `multipleOf` Keyword
+
+The value of `multipleOf` MUST be a number, strictly greater than 0. A numeric instance is valid only if division by this keyword's value results in an integer.
+
+```json
+{ "multipleOf": 5 }
+```
+
+This validates:
+- `5` ✓
+- `10` ✓
+- `15` ✓
+
+This does NOT validate:
+- `7` ✗
+
+### The `minimum` and `maximum` Keywords
+
+The value of `minimum` MUST be a number, representing an inclusive lower limit for a numeric instance.
+
+The value of `maximum` MUST be a number, representing an inclusive upper limit for a numeric instance.
+
+```json
+{
+  "type": "integer",
+  "minimum": 0,
+  "maximum": 100
+}
+```
+
+This validates integers from 0 to 100 (inclusive):
+- `0` ✓
+- `50` ✓
+- `100` ✓
+
+This does NOT validate:
+- `-1` ✗
+- `101` ✗
+
+### The `exclusiveMaximum` Keyword
+
+The value of `exclusiveMaximum` MUST be a number, representing an exclusive upper limit for a numeric instance. The instance is valid only if it has a value strictly less than (not equal to) `exclusiveMaximum`.
+
+```json
+{
+  "type": "number",
+  "exclusiveMaximum": 100
+}
+```
+
+This validates:
+- `99.9` ✓
+- `50` ✓
+
+This does NOT validate:
+- `100` ✗
+- `100.1` ✗
+
+## Building Complex Schemas
+
+<Steps>
+  <Step title="Start with the type">
+    Define the basic type of your data using the `type` keyword.
+    
+    ```json
+    { "type": "object" }
+    ```
+  </Step>
+  
+  <Step title="Add properties or items">
+    For objects, use `properties`. For arrays, use `items`.
+    
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "name": { "type": "string" }
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Define required fields">
+    Specify which properties are mandatory.
+    
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "name": { "type": "string" }
+      },
+      "required": ["id"]
+    }
+    ```
+  </Step>
+  
+  <Step title="Add validation constraints">
+    Use keywords like `minimum`, `maximum`, `enum`, or `const` to add specific constraints.
+    
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "id": { 
+          "type": "integer",
+          "minimum": 1
+        },
+        "name": { "type": "string" },
+        "status": {
+          "enum": ["active", "inactive", "pending"]
+        }
+      },
+      "required": ["id", "status"]
+    }
+    ```
+  </Step>
+</Steps>
+
+## Instance Equality
+
+Two JSON instances are said to be equal if and only if they are of the same type and have the same value according to the data model. Specifically:
+
+- both are null; or
+- both are true; or
+- both are false; or
+- both are strings, and are the same codepoint-for-codepoint; or
+- both are numbers, and have the same mathematical value; or
+- both are arrays, and have an equal value item-for-item; or
+- both are objects, and each property in one has exactly one property with a key equal to the other's, and that other property has an equal value
+
+<Info>
+Arrays must be the same length, objects must have the same number of members, properties in objects are unordered, and mere formatting differences (indentation, placement of commas, trailing zeros) are insignificant.
+</Info>
+
+## Next Steps
+
+Now that you understand the basics of JSON Schema, you can:
+
+- Explore the complete [Core Specification](/specification/core) for advanced features
+- Review all available [Validation Keywords](/reference/validation-keywords)
+- Learn about schema composition and conditional logic
+- Discover how to use `$schema`, `$id`, and other core keywords

@@ -1,0 +1,378 @@
+---
+title: 'Validation'
+description: 'Understanding how JSON Schema validation works'
+---
+
+## Overview
+
+JSON Schema validation asserts constraints on the structure of instance data. An instance location that satisfies all asserted constraints is then annotated with any keywords that contain non-assertion information. If all locations within the instance satisfy all asserted constraints, then the instance is said to be **valid** against the schema.
+
+<Info>
+Each schema object is independently evaluated against each instance location to which it applies. This greatly simplifies implementation requirements by ensuring validators do not need to maintain state across the document-wide validation process.
+</Info>
+
+## How Validation Works
+
+Validation is a **recursive process**. A JSON value is considered valid against a schema if, and only if, it satisfies the constraints defined by every keyword in that schema.
+
+### Recursive Evaluation
+
+Some keywords contain one or more subschemas. These keywords create complex constraints or describe compound values like arrays and objects.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { 
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}
+```
+
+In this example:
+1. The root schema declares the instance MUST be an object
+2. The `properties` keyword applies separate schemas to each property
+3. Each property schema is evaluated recursively
+4. The instance is valid only if all recursive evaluations succeed
+
+### Evaluation Process
+
+Evaluating an instance against a schema involves:
+
+1. **Processing applicator keywords** until a schema object with no applicators is reached
+2. **Evaluating assertion keywords** at the appropriate location in the instance
+3. **Combining keyword results** according to the rules for each keyword
+4. **Collecting annotations** from keywords that produce them
+
+<Note>
+Evaluation of a parent schema object can complete once all of its subschemas have been evaluated. Some evaluations may be short-circuited based on assertion results, but when collecting annotations, all applicable subschemas must be examined.
+</Note>
+
+## Assertions vs Annotations
+
+Keywords in JSON Schema have different behaviors:
+
+### Assertion Keywords
+
+Assertion keywords produce a **boolean result** indicating whether the instance satisfies a constraint.
+
+<Tabs>
+  <Tab title="Type Assertions">
+    ```json
+    {
+      "type": "string"
+    }
+    ```
+    
+    Validates instances to ensure they are strings.
+    
+    - `"hello"` → ✓ Valid
+    - `42` → ✗ Invalid
+  </Tab>
+  <Tab title="Numeric Assertions">
+    ```json
+    {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    }
+    ```
+    
+    Validates numbers are within a range.
+    
+    - `50` → ✓ Valid
+    - `150` → ✗ Invalid
+    - `-10` → ✗ Invalid
+  </Tab>
+  <Tab title="String Assertions">
+    ```json
+    {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 10,
+      "pattern": "^[A-Za-z]+$"
+    }
+    ```
+    
+    Validates string length and pattern.
+    
+    - `"hello"` → ✓ Valid
+    - `"hi"` → ✗ Invalid (too short)
+    - `"hello123"` → ✗ Invalid (doesn't match pattern)
+  </Tab>
+</Tabs>
+
+### Annotation Keywords
+
+Annotation keywords attach metadata to instance locations for application use. They do not affect validation results.
+
+```json
+{
+  "title": "User Name",
+  "description": "The name of the user",
+  "type": "string",
+  "default": "Anonymous"
+}
+```
+
+<Info>
+Annotations like `title`, `description`, and `default` provide information for documentation, UI generation, and other application-specific purposes. They never cause validation to fail.
+</Info>
+
+## Assertion Behavior and Instance Types
+
+Most assertion keywords only constrain values within a certain primitive type. When the instance type doesn't match the keyword's target type, the instance is considered to conform to the assertion.
+
+```json
+{
+  "type": ["string", "null"],
+  "maxLength": 255
+}
+```
+
+**How this works:**
+- The `maxLength` keyword only restricts strings that are too long
+- If the instance is a number, boolean, null, array, or object, it's valid against `maxLength`
+- The `type` keyword independently restricts the instance to string or null
+- A null value passes both `type` and `maxLength` validations
+
+<Note>
+This behavior allows keywords to be used easily with instances that can be of multiple primitive types. Each keyword is evaluated separately unless explicitly specified otherwise.
+</Note>
+
+## Validation Keywords by Type
+
+### Any Instance Type
+
+**`type`** - Validates the instance is one of the specified types:
+
+```json
+{
+  "type": "string"
+}
+
+// Or multiple types:
+{
+  "type": ["string", "number"]
+}
+```
+
+**`enum`** - Validates the instance equals one of the specified values:
+
+```json
+{
+  "enum": ["red", "green", "blue"]
+}
+```
+
+**`const`** - Validates the instance equals a specific value:
+
+```json
+{
+  "const": "fixed-value"
+}
+```
+
+### Numeric Instances
+
+For numbers and integers:
+
+```json
+{
+  "type": "number",
+  "minimum": 0,
+  "maximum": 100,
+  "exclusiveMinimum": 0,
+  "exclusiveMaximum": 100,
+  "multipleOf": 5
+}
+```
+
+- `minimum` / `maximum` - Inclusive bounds
+- `exclusiveMinimum` / `exclusiveMaximum` - Exclusive bounds
+- `multipleOf` - Instance must be a multiple of the specified number
+
+### String Instances
+
+```json
+{
+  "type": "string",
+  "minLength": 1,
+  "maxLength": 100,
+  "pattern": "^[A-Za-z0-9]+$"
+}
+```
+
+- `minLength` / `maxLength` - Length constraints (in Unicode code points)
+- `pattern` - Regular expression the string must match
+
+### Array Instances
+
+```json
+{
+  "type": "array",
+  "minItems": 1,
+  "maxItems": 10,
+  "uniqueItems": true
+}
+```
+
+- `minItems` / `maxItems` - Size constraints
+- `uniqueItems` - Whether all items must be unique
+
+### Object Instances
+
+```json
+{
+  "type": "object",
+  "minProperties": 1,
+  "maxProperties": 10,
+  "required": ["name", "email"],
+  "dependentRequired": {
+    "creditCard": ["billingAddress"]
+  }
+}
+```
+
+- `minProperties` / `maxProperties` - Number of properties
+- `required` - Array of required property names
+- `dependentRequired` - Properties required when another property is present
+
+## Validation Examples
+
+### Simple Validation
+
+<Tabs>
+  <Tab title="Schema">
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "age": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": ["name"]
+    }
+    ```
+  </Tab>
+  <Tab title="Valid Instance">
+    ```json
+    {
+      "name": "Alice",
+      "age": 30
+    }
+    ```
+    
+    ✓ Valid: All constraints satisfied
+  </Tab>
+  <Tab title="Invalid Instance">
+    ```json
+    {
+      "age": 30
+    }
+    ```
+    
+    ✗ Invalid: Missing required property "name"
+  </Tab>
+</Tabs>
+
+### Complex Validation
+
+<Tabs>
+  <Tab title="Schema">
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "pattern": "^\\+?[1-9]\\d{1,14}$"
+        }
+      },
+      "anyOf": [
+        { "required": ["email"] },
+        { "required": ["phone"] }
+      ]
+    }
+    ```
+  </Tab>
+  <Tab title="Valid Examples">
+    ```json
+    // Valid: has email
+    {
+      "email": "alice@example.com"
+    }
+
+    // Valid: has phone
+    {
+      "phone": "+1234567890"
+    }
+
+    // Valid: has both
+    {
+      "email": "alice@example.com",
+      "phone": "+1234567890"
+    }
+    ```
+  </Tab>
+  <Tab title="Invalid Example">
+    ```json
+    {
+      "name": "Alice"
+    }
+    ```
+    
+    ✗ Invalid: Must have at least one of email or phone
+  </Tab>
+</Tabs>
+
+## Short-Circuit Evaluation
+
+For efficiency, implementations may use "short-circuit" evaluation for assertions:
+
+```json
+{
+  "allOf": [
+    { "type": "string" },
+    { "minLength": 5 },
+    { "maxLength": 10 }
+  ]
+}
+```
+
+- If the instance fails the first schema (`type: string`), validation can stop immediately
+- The remaining schemas don't need to be evaluated
+
+<Warning>
+When collecting annotations, short-circuiting is not possible. All schemas must be examined to collect all annotation values, even if some assertions fail.
+</Warning>
+
+## Validation Result
+
+JSON Schema implementations produce a **single boolean result** when evaluating an instance against schema assertions:
+
+- `true` - The instance is **valid**: all assertions passed
+- `false` - The instance is **invalid**: at least one assertion failed
+
+<Info>
+An instance can only fail an assertion that is present in the schema. Omitted keywords have default behavior that does not cause validation to fail.
+</Info>
+
+Many implementations also provide detailed error information when validation fails, including:
+- The instance location that failed validation
+- The schema location (keyword) that produced the failure
+- The evaluation path taken to reach the failure
+- An error message describing why validation failed

@@ -1,0 +1,467 @@
+---
+title: 'Vocabularies'
+description: 'Understanding JSON Schema vocabularies and extensibility'
+---
+
+## What are Vocabularies?
+
+Vocabularies are the mechanism by which JSON Schema is extended and customized. A vocabulary is a set of related keywords that work together to provide specific functionality. Each vocabulary is identified by a URI and can be required or optional in a schema.
+
+<Info>
+Vocabularies enable JSON Schema to be flexible and extensible while maintaining clear boundaries between different sets of functionality.
+</Info>
+
+## The `$vocabulary` Keyword
+
+The `$vocabulary` keyword is used in meta-schemas to declare which vocabularies are available. Its value MUST be an object where:
+
+- Each **key** is a vocabulary URI
+- Each **value** is a boolean:
+  - `true` - The vocabulary is **required** (implementations MUST support it)
+  - `false` - The vocabulary is **optional** (implementations MAY support it)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/next/schema",
+  "$id": "https://json-schema.org/draft/next/schema",
+  "$vocabulary": {
+    "https://json-schema.org/draft/next/vocab/core": true,
+    "https://json-schema.org/draft/next/vocab/applicator": true,
+    "https://json-schema.org/draft/next/vocab/validation": true,
+    "https://json-schema.org/draft/next/vocab/meta-data": true,
+    "https://json-schema.org/draft/next/vocab/format-annotation": true,
+    "https://json-schema.org/draft/next/vocab/content": true
+  }
+}
+```
+
+<Warning>
+Implementations MUST refuse to evaluate schemas which contain keywords they do not know how to process or explicitly choose not to process.
+</Warning>
+
+## Core Vocabularies
+
+JSON Schema defines several standard vocabularies:
+
+### Core Vocabulary
+
+**URI:** `https://json-schema.org/draft/next/vocab/core`
+
+**Purpose:** Essential keywords that MUST be supported by all implementations.
+
+The core vocabulary includes keywords that begin with `$` and are fundamental to processing schemas:
+
+- `$schema` - Declares the meta-schema and dialect
+- `$id` - Identifies the schema resource
+- `$ref` - References another schema
+- `$dynamicRef` / `$dynamicAnchor` - Dynamic references for advanced use cases
+- `$defs` - Defines reusable schema components
+- `$comment` - Provides comments for schema authors
+- `$vocabulary` - Declares available vocabularies (in meta-schemas)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/next/schema",
+  "$id": "https://example.com/schemas/user.json",
+  "$defs": {
+    "emailAddress": {
+      "type": "string",
+      "format": "email"
+    }
+  },
+  "properties": {
+    "email": { "$ref": "#/$defs/emailAddress" }
+  }
+}
+```
+
+<Note>
+The `$` prefix is reserved for core keywords. Extension keywords MUST NOT begin with `$`.
+</Note>
+
+### Applicator Vocabulary
+
+**URI:** `https://json-schema.org/draft/next/vocab/applicator`
+
+**Purpose:** Keywords that apply subschemas to instances.
+
+Applicator keywords determine which schemas are applied to which parts of an instance:
+
+**Logic applicators:**
+- `allOf` - Instance must be valid against all subschemas
+- `anyOf` - Instance must be valid against at least one subschema
+- `oneOf` - Instance must be valid against exactly one subschema
+- `not` - Instance must NOT be valid against the subschema
+
+**Conditional applicators:**
+- `if` / `then` / `else` - Conditional application based on validation result
+- `dependentSchemas` - Apply schemas based on presence of properties
+
+**Array applicators:**
+- `prefixItems` - Apply schemas to array elements by position
+- `items` - Apply schema to remaining array elements
+- `contains` - At least one array element must match
+- `minContains` / `maxContains` - Constrain number of matching elements
+
+**Object applicators:**
+- `properties` - Apply schemas to named object properties
+- `patternProperties` - Apply schemas to properties matching patterns
+- `additionalProperties` - Apply schema to remaining properties
+- `propertyNames` - Validate property name strings
+
+**Unevaluated applicators:**
+- `unevaluatedItems` - Apply schema to array items not evaluated by other keywords
+- `unevaluatedProperties` - Apply schema to object properties not evaluated by other keywords
+
+<Tabs>
+  <Tab title="Logic Example">
+    ```json
+    {
+      "anyOf": [
+        { "type": "string" },
+        { "type": "number" }
+      ]
+    }
+    ```
+    
+    Instance can be either a string or a number.
+  </Tab>
+  <Tab title="Array Example">
+    ```json
+    {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number" },
+        { "type": "string" }
+      ],
+      "items": { "type": "boolean" }
+    }
+    ```
+    
+    First item must be number, second must be string, remaining items must be booleans.
+  </Tab>
+  <Tab title="Object Example">
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" }
+      },
+      "patternProperties": {
+        "^age_": { "type": "number" }
+      },
+      "additionalProperties": false
+    }
+    ```
+    
+    Only allows "name" (string), properties starting with "age_" (number), and no others.
+  </Tab>
+</Tabs>
+
+### Validation Vocabulary
+
+**URI:** `https://json-schema.org/draft/next/vocab/validation`
+
+**Purpose:** Keywords that assert constraints on instance values.
+
+Validation keywords produce boolean assertion results:
+
+**Any type:**
+- `type` - Restricts instance to specific type(s)
+- `enum` - Instance must equal one of the specified values
+- `const` - Instance must equal a specific value
+
+**Numeric:**
+- `minimum` / `maximum` - Inclusive bounds
+- `exclusiveMinimum` / `exclusiveMaximum` - Exclusive bounds
+- `multipleOf` - Value must be a multiple of specified number
+
+**String:**
+- `minLength` / `maxLength` - Length constraints
+- `pattern` - Regular expression match
+
+**Array:**
+- `minItems` / `maxItems` - Size constraints
+- `uniqueItems` - Whether elements must be unique
+
+**Object:**
+- `minProperties` / `maxProperties` - Property count constraints
+- `required` - Array of required property names
+- `dependentRequired` - Required properties based on presence of others
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 20,
+      "pattern": "^[a-zA-Z0-9_]+$"
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 13,
+      "maximum": 120
+    }
+  },
+  "required": ["username"]
+}
+```
+
+### Meta-Data Vocabulary
+
+**URI:** `https://json-schema.org/draft/next/vocab/meta-data`
+
+**Purpose:** Annotation keywords that provide metadata about schemas and instances.
+
+Meta-data keywords don't affect validation but provide information for humans and applications:
+
+- `title` - Short, human-readable title
+- `description` - Longer explanation of purpose
+- `default` - Default value for the instance
+- `deprecated` - Whether the instance location is deprecated
+- `readOnly` - Value is managed by owning authority
+- `writeOnly` - Value is never present when retrieved
+- `examples` - Sample values illustrating usage
+
+```json
+{
+  "title": "Product",
+  "description": "A product in the catalog",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Unique product identifier",
+      "readOnly": true,
+      "examples": [123, 456]
+    },
+    "name": {
+      "type": "string",
+      "description": "Product name",
+      "examples": ["Widget", "Gadget"]
+    },
+    "price": {
+      "type": "number",
+      "description": "Price in USD",
+      "minimum": 0,
+      "examples": [19.99, 99.99]
+    }
+  },
+  "required": ["name", "price"]
+}
+```
+
+### Format Annotation Vocabulary
+
+**URI:** `https://json-schema.org/draft/next/vocab/format-annotation`
+
+**Purpose:** Provides semantic information about string values.
+
+The `format` keyword indicates the format of string instances:
+
+**Dates and Times:**
+- `date-time` - RFC 3339 date-time
+- `date` - RFC 3339 full-date
+- `time` - RFC 3339 full-time
+- `duration` - ISO 8601 duration
+
+**Email and Hostnames:**
+- `email` - RFC 5321 email address
+- `hostname` - RFC 1123 hostname
+
+**IP Addresses:**
+- `ipv4` - IPv4 address
+- `ipv6` - IPv6 address
+
+**Resource Identifiers:**
+- `uri` / `uri-reference` - URI/URI reference
+- `iri` / `iri-reference` - IRI/IRI reference
+- `uuid` - UUID string
+- `uri-template` - URI template
+
+**JSON Pointers:**
+- `json-pointer` - JSON Pointer
+- `relative-json-pointer` - Relative JSON Pointer
+
+**Regular Expressions:**
+- `regex` - Regular expression
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "website": {
+      "type": "string",
+      "format": "uri"
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    }
+  }
+}
+```
+
+<Info>
+Implementations SHOULD provide assertion behavior for format values but may choose to treat them as annotations only.
+</Info>
+
+### Content Vocabulary
+
+**URI:** `https://json-schema.org/draft/next/vocab/content`
+
+**Purpose:** Annotate string-encoded data with content information.
+
+Content keywords describe non-JSON data encoded in JSON strings:
+
+- `contentEncoding` - How the string is encoded (e.g., "base64")
+- `contentMediaType` - Media type of the content (e.g., "application/json")
+- `contentSchema` - Schema for the decoded content
+
+```json
+{
+  "type": "string",
+  "contentEncoding": "base64",
+  "contentMediaType": "image/png"
+}
+```
+
+Example with embedded JSON:
+
+```json
+{
+  "type": "string",
+  "contentMediaType": "application/json",
+  "contentSchema": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string" },
+      "age": { "type": "integer" }
+    },
+    "required": ["name"]
+  }
+}
+```
+
+<Warning>
+Due to security and performance concerns, implementations MUST NOT automatically decode, parse, or validate string contents. Applications should invoke appropriate libraries separately.
+</Warning>
+
+## Unevaluated Vocabulary
+
+**URI:** `https://json-schema.org/draft/next/vocab/unevaluated`
+
+**Purpose:** Apply schemas to instance locations not evaluated by other keywords.
+
+This vocabulary contains:
+- `unevaluatedItems` - Apply schema to array items not yet evaluated
+- `unevaluatedProperties` - Apply schema to object properties not yet evaluated
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" }
+  },
+  "unevaluatedProperties": false
+}
+```
+
+This schema only allows the "name" property - any additional properties will fail validation.
+
+## Creating Custom Vocabularies
+
+Organizations can define custom vocabularies for specialized needs:
+
+### Extension Keywords
+
+Additional schema keywords MAY be defined by any entity. Extension keywords:
+
+- MUST NOT directly modify the operation of standard keywords
+- SHOULD NOT directly modify the operation of other extension keywords
+- MAY use the "x-" prefix for simple annotation keywords
+
+<Note>
+Keywords beginning with "x-" are implicitly defined as annotation keywords. Their values are collected as annotations and MUST NOT affect validation.
+</Note>
+
+### Example Custom Vocabulary
+
+```json
+{
+  "$schema": "https://example.com/my-custom-meta-schema",
+  "$vocabulary": {
+    "https://json-schema.org/draft/next/vocab/core": true,
+    "https://json-schema.org/draft/next/vocab/applicator": true,
+    "https://json-schema.org/draft/next/vocab/validation": true,
+    "https://example.com/vocab/custom": false
+  }
+}
+```
+
+A schema using this custom vocabulary:
+
+```json
+{
+  "$schema": "https://example.com/my-custom-meta-schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "x-internal-id": "field_001",
+      "x-display-order": 1
+    }
+  }
+}
+```
+
+### Vocabulary Best Practices
+
+<Tabs>
+  <Tab title="Do">
+    ✓ Use URIs to identify vocabularies uniquely
+    
+    ✓ Document vocabulary keywords thoroughly
+    
+    ✓ Mark vocabularies as required (`true`) if implementations must support them
+    
+    ✓ Use "x-" prefix for simple annotation-only extensions
+    
+    ✓ Test vocabulary compatibility across implementations
+  </Tab>
+  <Tab title="Don't">
+    ✗ Don't define keywords that modify standard keyword behavior
+    
+    ✗ Don't use `$` prefix for extension keywords (reserved for core)
+    
+    ✗ Don't expect cross-implementation support without explicit documentation
+    
+    ✗ Don't create vocabularies that depend on other custom vocabularies
+    
+    ✗ Don't mark vocabularies as required unless absolutely necessary
+  </Tab>
+</Tabs>
+
+## Extensibility Model
+
+JSON Schema's vocabulary system provides a robust extensibility model:
+
+1. **Clear boundaries** - Each vocabulary has a specific purpose and URI
+2. **Optional support** - Vocabularies can be marked as optional
+3. **Graceful failure** - Implementations refuse unknown required vocabularies
+4. **Standard keywords** - Core vocabularies provide common functionality
+5. **Custom extensions** - Organizations can add domain-specific keywords
+
+<Info>
+This design allows JSON Schema to evolve and adapt to new use cases while maintaining a stable core and ensuring interoperability.
+</Info>

@@ -1,0 +1,304 @@
+---
+title: Core Keywords
+description: Essential keywords that are fundamental to processing JSON Schema
+---
+
+Core keywords are essential to processing JSON Schema. These keywords, prefixed with a dollar sign (`$`), are mandatory and cannot be disabled. They control schema identification, navigation, reference resolution, and structural organization.
+
+## Identification Keywords
+
+These keywords control schema identification and establish the base IRI for resolving relative references.
+
+<Accordion title="$schema">
+
+**Type:** String (IRI with scheme)
+
+**Purpose:** Declares the JSON Schema dialect and identifies the meta-schema that describes valid syntax for the schema.
+
+The `$schema` keyword serves both as a dialect identifier and as the identifier of a meta-schema resource. It applies to the entire schema resource and any embedded schema resources unless they declare a different dialect.
+
+**Usage:**
+- SHOULD be used in the document root schema object
+- MAY be used in root schema objects of embedded schema resources  
+- MUST NOT appear in subschemas that are not schema resource roots
+- Value MUST be an IRI containing a scheme, and the IRI MUST be normalized
+
+**Example:**
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "type": "object"
+}
+```
+
+</Accordion>
+
+<Accordion title="$id">
+
+**Type:** String (IRI reference without fragment)
+
+**Purpose:** Identifies a schema resource with an absolute IRI and establishes the base IRI for resolving relative references within that schema resource.
+
+An `$id` keyword identifies that schema or subschema as a distinct schema resource. When resolved against the current base IRI, it produces an absolute IRI that serves as both the identifier and the new base IRI for the resource.
+
+**Usage:**
+- Value MUST be a string representing a valid IRI reference without a fragment
+- The root schema SHOULD contain an `$id` with an absolute IRI
+- Creates an embedded schema resource when used in a subschema
+- Serves as the canonical identifier for the schema resource
+
+**Example:**
+```json
+{
+  "$id": "https://example.com/schemas/person.json",
+  "type": "object",
+  "properties": {
+    "address": {
+      "$id": "https://example.com/schemas/address.json",
+      "type": "object"
+    }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="$anchor">
+
+**Type:** String (plain name fragment identifier)
+
+**Purpose:** Defines location-independent identifiers for subschemas that can be used in IRI fragments as an alternative to JSON Pointers.
+
+The `$anchor` keyword allows creating plain name fragment identifiers that are not coupled to the schema structure, making schemas more robust when relocated.
+
+**Usage:**
+- Value MUST be a string conforming to the NCName production (XML name syntax)
+- Can contain: letters, digits, underscore (`_`), hyphen (`-`), and period (`.`)
+- Must start with a letter or underscore
+- Does not include the `#` character
+
+**Example:**
+```json
+{
+  "$id": "https://example.com/schemas/common.json",
+  "$defs": {
+    "positiveInteger": {
+      "$anchor": "positiveInt",
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "type": "object",
+  "properties": {
+    "age": { "$ref": "#positiveInt" }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="$dynamicAnchor">
+
+**Type:** String (plain name fragment identifier)
+
+**Purpose:** Defines location-independent identifiers within the dynamic scope of schema evaluation, used exclusively by `$dynamicRef`.
+
+Unlike `$anchor`, fragment identifiers defined by `$dynamicAnchor` are resolved dynamically based on the evaluation path, allowing referenced schemas to be overridden by schemas encountered during evaluation.
+
+**Usage:**
+- Value MUST be a string
+- Only meaningful when paired with `$dynamicRef`
+- Resolved by searching the dynamic scope (evaluation path) rather than lexical scope
+- Used for recursive schemas that can be extended
+
+**Example:**
+```json
+{
+  "$id": "https://example.com/tree",
+  "$dynamicAnchor": "node",
+  "type": "object",
+  "properties": {
+    "children": {
+      "type": "array",
+      "items": { "$dynamicRef": "#node" }
+    }
+  }
+}
+```
+
+</Accordion>
+
+## Reference Keywords
+
+These keywords reference other schemas to be applied to the instance.
+
+<Accordion title="$ref">
+
+**Type:** String (IRI reference)
+
+**Purpose:** References a statically identified schema to be applied to the current instance location.
+
+The `$ref` keyword is an applicator that applies a referenced schema. Its results are the results of the referenced schema. The reference is resolved against the current base IRI.
+
+**Usage:**
+- Value MUST be a string which is an IRI reference
+- Can reference schemas using absolute IRIs, relative IRIs, or fragments
+- Can appear alongside other keywords in the same schema object
+- Resolution is safe to perform at schema load time
+
+**Example:**
+```json
+{
+  "$defs": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" }
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "billingAddress": { "$ref": "#/$defs/address" },
+    "shippingAddress": { "$ref": "#/$defs/address" }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="$dynamicRef">
+
+**Type:** String (IRI reference)
+
+**Purpose:** References a dynamically identified schema, allowing the referencing schema to override where a reference resolves based on the evaluation path.
+
+The `$dynamicRef` keyword enables advanced schema composition patterns, particularly for recursive schemas that can be extended. It searches the dynamic scope for matching `$dynamicAnchor` values.
+
+**Usage:**
+- Value MUST be a string conforming to plain name fragment identifier syntax
+- Forms a string-matched pair with `$dynamicAnchor`
+- Resolution begins by searching the dynamic scope for matching `$dynamicAnchor`
+- Useful for extensible recursive schemas and generic container schemas
+
+**Example:**
+```json
+{
+  "$id": "https://example.com/tree-base",
+  "$dynamicAnchor": "node",
+  "type": "object",
+  "properties": {
+    "value": { "type": "string" },
+    "children": {
+      "type": "array",
+      "items": { "$dynamicRef": "#node" }
+    }
+  }
+}
+```
+
+</Accordion>
+
+## Structural Keywords
+
+These keywords organize and structure schemas for reusability and documentation.
+
+<Accordion title="$defs">
+
+**Type:** Object (each value must be a valid JSON Schema)
+
+**Purpose:** Reserves a location for schema authors to inline reusable JSON Schemas. Does not directly affect validation.
+
+The `$defs` keyword provides a standard location for defining subschemas that can be referenced elsewhere in the schema.
+
+**Usage:**
+- Value MUST be an object
+- Each member value MUST be a valid JSON Schema
+- Does not produce validation or annotation results on its own
+- Schemas within `$defs` are only evaluated when referenced
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/item" }
+    }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "name": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="$comment">
+
+**Type:** String
+
+**Purpose:** Reserves a location for comments from schema authors to readers or maintainers. Has no effect on validation or annotations.
+
+The `$comment` keyword allows schema authors to document their schemas inline without affecting processing.
+
+**Usage:**
+- Value MUST be a string
+- MUST NOT affect validation results
+- MUST NOT be collected as an annotation
+- MAY be used as directives for developer tooling (e.g., linter directives)
+- Tools MAY convert between `$comment` and native comments when translating schemas
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "status": {
+      "$comment": "This enum may be extended in future versions",
+      "enum": ["active", "inactive", "pending"]
+    }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="$vocabulary">
+
+**Type:** Object (property values must be boolean)
+
+**Purpose:** Declares the vocabularies (keyword sets) used in a meta-schema and whether they are required or optional.
+
+The `$vocabulary` keyword is used in meta-schemas to declare which vocabularies they support. This allows implementations to determine if they can process a schema.
+
+**Usage:**
+- Used in meta-schemas, not regular schemas
+- Keys are vocabulary IRI identifiers
+- Values are boolean: `true` means required, `false` means optional
+- Implementations MUST refuse to process schemas using vocabularies they don't support
+
+**Example:**
+```json
+{
+  "$id": "https://example.com/meta/custom",
+  "$schema": "https://json-schema.org/v1/2026",
+  "$vocabulary": {
+    "https://json-schema.org/v1/vocab/core": true,
+    "https://json-schema.org/v1/vocab/applicator": true,
+    "https://json-schema.org/v1/vocab/validation": true,
+    "https://example.com/vocab/custom": false
+  }
+}
+```
+
+</Accordion>

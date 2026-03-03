@@ -1,0 +1,147 @@
+---
+title: "Assertion Format (2024-11)"
+description: "Making format an assertion keyword by default"
+---
+
+<Info>
+**Status**: Proposed  
+**Date**: November 2, 2024  
+**Deciders**: @gregsdennis @jdesrosiers @julian @jviotti @mwadams @karenetheridge @relequestual
+</Info>
+
+## Context and Problem Statement
+
+The `format` keyword has a long and complex history in JSON Schema that has led to inconsistent behavior across implementations and ongoing confusion for users.
+
+### Historical Background
+
+1. **From Draft 01**: `format` has never required validation
+2. **Implementation choice**: Whether to support format validation has always been up to implementations
+3. **Extent of validation**: How thoroughly formats are validated has also been implementation-dependent
+
+<Note>
+This inconsistency has resulted in spotty implementation support. Even implementations that do support validation don't all support each format equally, despite the JSON Schema specs referencing very concretely defined formats from other specifications.
+</Note>
+
+### Evolution of Format Behavior
+
+**2019-09**: Introduced schema-author control
+- Schema authors could enable validation by using a meta-schema listing the Format Vocabulary with `true`
+- This meant "format validation is required to process this schema"
+
+**2020-12**: Refined with separate vocabularies
+- Offered two vocabularies: one treating `format` as annotation, one as assertion
+- Argument: keyword behavior shouldn't change based on whether vocabulary is required
+
+**The Problem**: Users consistently report (via Slack, GitHub, and StackOverflow) that they **expect** `format` to validate by default.
+
+## Decision Drivers
+
+Four main factors influenced this decision:
+
+- **User expectation**: Consistent reports that users expect `format` to validate
+- **Current behavior**: Existing annotation-only behavior is confusing
+- **Historical context**: Long history of optional validation
+- **Implementation disparity**: Gap between current support and proposed requirements
+
+## Voting Results
+
+<Accordion title="TSC Vote Breakdown">
+  **For**: @gregsdennis @jdesrosiers @jviotti @mwadams @karenetheridge  
+  **Neutral**: @relequestual  
+  **Against**: @julian
+
+  [View voting issue](https://github.com/json-schema-org/TSC/issues/19)
+</Accordion>
+
+## Options Considered
+
+### Option 1: Format Remains Annotation (Current State)
+
+`format` continues as an annotation keyword by default.
+
+**Benefits**:
+- No breaking change required
+- Maintains backward compatibility
+
+**Drawbacks**:
+- Current system is confusing (requires tool configuration or `format-assertion` vocab)
+- Doesn't align with user expectations
+- The `format-assertion` vocabulary will no longer be an option since vocabularies were demoted to a proposal for the stable release
+
+### Option 2: Format Becomes Assertion (CHOSEN)
+
+<Note>
+The spec now requires `format` validation by default.
+</Note>
+
+Specific requirements:
+
+- **SHOULD support**: Implementations should support `format` with the defined values
+- **MAY support custom**: Implementations may support other formats, but only by explicit configuration
+- **MUST refuse**: Implementations must refuse to process a schema containing an unsupported format
+
+## Decision Outcome
+
+The TSC voted to change `format` to act as an assertion by default, adopting Option 2.
+
+### Positive Consequences
+
+**Aligns with expectations**: Matches what users consistently expect `format` to do
+
+**Annotation alternative**: Users who want purely annotative behavior can use custom keywords like `x-format` (see the [Single-Value Annotations ADR](/reference/adr/overview))
+
+**Increased consistency**: Format validation will be more consistent across implementations
+
+### Negative Consequences
+
+<Accordion title="Breaking Change Implications">
+  **User re-education**: Users who correctly treat `format` as an annotation will need to be informed of the change
+
+  **Schema version ambiguity**: Older schemas without a `$schema` keyword may change their validation outcome
+
+  **Implementation burden**: Greater burden on implementations since format validation was previously optional
+</Accordion>
+
+## Implementation Requirements
+
+With this change, implementations must:
+
+1. **Validate by default**: Treat `format` as an assertion that can fail validation
+2. **Support defined formats**: Implement the formats specified in the JSON Schema specification
+3. **Reject unknown formats**: Refuse to process schemas with unsupported format values (unless explicitly configured otherwise)
+4. **Test suite compliance**: Pass the required format validation tests that are now in the mandatory section
+
+<Info>
+The test suite is being expanded to strictly enforce format validation with more complete test coverage for all defined formats.
+</Info>
+
+## Migration Guide
+
+For users of existing schemas:
+
+**If you want annotation-only behavior**:
+```json
+{
+  "x-format": "email",
+  "type": "string"
+}
+```
+
+**If you use format for validation (recommended)**:
+```json
+{
+  "format": "email",
+  "type": "string"
+}
+```
+
+<Note>
+Schemas should always include a `$schema` keyword to explicitly declare which version of JSON Schema they target, avoiding ambiguity in format behavior.
+</Note>
+
+## Related Links
+
+- [Technical Story Issue](https://github.com/json-schema-org/json-schema-spec/issues/1520)
+- [TSC Voting Issue](https://github.com/json-schema-org/TSC/issues/19)
+- [Format Vocabulary Specification](https://json-schema.org/draft/2020-12/json-schema-validation.html#name-vocabularies-for-semantic-c)

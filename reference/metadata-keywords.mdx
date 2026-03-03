@@ -1,0 +1,467 @@
+---
+title: Metadata Keywords
+description: Keywords that provide documentation and metadata annotations
+---
+
+Metadata keywords provide descriptive information and annotations. Unlike validation keywords, these do not constrain instance values but provide information for documentation, user interfaces, and applications.
+
+## Basic Metadata
+
+<Accordion title="title">
+
+**Type:** String
+
+**Purpose:** Provides a short, human-readable title for a schema.
+
+The `title` keyword is used to provide a concise label for schemas, particularly useful for UI generation and documentation.
+
+**Behavior:**
+- Value MUST be a string
+- Produces an annotation result
+- Does not affect validation
+- Should be short and descriptive
+
+**Example:**
+```json
+{
+  "title": "User Profile",
+  "type": "object",
+  "properties": {
+    "username": {
+      "title": "Username",
+      "type": "string"
+    },
+    "age": {
+      "title": "Age in Years",
+      "type": "integer"
+    }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="description">
+
+**Type:** String
+
+**Purpose:** Provides a detailed explanation of the schema's purpose and usage.
+
+The `description` keyword offers more comprehensive documentation than `title`, explaining what the schema represents and how it should be used.
+
+**Behavior:**
+- Value MUST be a string
+- Produces an annotation result
+- Does not affect validation
+- May be longer and more detailed than `title`
+
+**Example:**
+```json
+{
+  "title": "Product",
+  "description": "Represents a product in the catalog with all its attributes including pricing, inventory, and categorization information.",
+  "type": "object",
+  "properties": {
+    "sku": {
+      "type": "string",
+      "description": "Stock Keeping Unit - a unique identifier for the product"
+    },
+    "price": {
+      "type": "number",
+      "description": "The current selling price in USD"
+    }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="default">
+
+**Type:** Any JSON value
+
+**Purpose:** Supplies a default value for a schema location.
+
+The `default` keyword suggests a default value that applications may use when an instance value is not provided.
+
+**Behavior:**
+- Value can be any JSON type
+- Produces an annotation result
+- Does not affect validation
+- The default value SHOULD be valid against the schema
+- When multiple `default` values are applicable, implementations SHOULD remove duplicates
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "theme": {
+      "type": "string",
+      "enum": ["light", "dark", "auto"],
+      "default": "auto"
+    },
+    "timeout": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 30
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="examples">
+
+**Type:** Array (any values)
+
+**Purpose:** Provides sample values that are valid for the schema.
+
+The `examples` keyword supplies one or more example values to illustrate valid instances, useful for documentation and testing.
+
+**Behavior:**
+- Value MUST be an array
+- No restrictions on the values within the array
+- Produces an annotation result
+- Does not affect validation
+- Values SHOULD be valid against the schema
+- When multiple occurrences apply, implementations MUST provide a flat array of all values
+- Implementations MAY use `default` as an additional example if present
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email",
+      "examples": [
+        "user@example.com",
+        "admin@company.org"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "inactive", "pending"],
+      "examples": ["active", "pending"]
+    }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="deprecated">
+
+**Type:** Boolean
+
+**Purpose:** Indicates that a schema or property should no longer be used.
+
+The `deprecated` keyword marks schemas or properties as outdated, signaling to developers and tools that they should avoid using them.
+
+**Behavior:**
+- Value MUST be a boolean
+- Produces an annotation result
+- Does not affect validation
+- If `true`, indicates applications SHOULD refrain from using the property
+- May mean the property will be removed in the future
+- When multiple occurrences apply, if ANY specify `true`, the location is deprecated
+- Omitting has the same behavior as `false`
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "User ID"
+    },
+    "user_id": {
+      "type": "integer",
+      "deprecated": true,
+      "description": "Legacy field. Use 'id' instead."
+    }
+  }
+}
+```
+
+</Accordion>
+
+## Access Control Metadata
+
+<Accordion title="readOnly">
+
+**Type:** Boolean
+
+**Purpose:** Indicates that a value is managed by the owning authority and should not be modified.
+
+The `readOnly` keyword marks properties that are managed exclusively by the server or system and should not be set by clients.
+
+**Behavior:**
+- Value MUST be a boolean
+- Produces an annotation result
+- Does not affect validation
+- If `true`, indicates the value is managed by the owning authority
+- Attempts to modify read-only values should be ignored or rejected
+- Can assist with UI generation (e.g., disabled input fields)
+- When multiple occurrences apply, if ANY specify `true`, treat as read-only
+- Omitting has the same behavior as `false`
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "readOnly": true,
+      "description": "Auto-generated unique identifier"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    },
+    "name": {
+      "type": "string",
+      "description": "User can modify this field"
+    }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="writeOnly">
+
+**Type:** Boolean
+
+**Purpose:** Indicates that a value should only be sent to the server, never returned.
+
+The `writeOnly` keyword marks properties that can be set but will never be returned when retrieving data, typically used for sensitive information.
+
+**Behavior:**
+- Value MUST be a boolean
+- Produces an annotation result
+- Does not affect validation
+- If `true`, indicates the value is never present when retrieved from the owning authority
+- Can be present when creating or updating but won't be in responses
+- Can assist with UI generation (e.g., password input fields)
+- When multiple occurrences apply, if ANY specify `true`, treat as write-only
+- Omitting has the same behavior as `false`
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string"
+    },
+    "password": {
+      "type": "string",
+      "writeOnly": true,
+      "minLength": 8,
+      "description": "User password - never returned in responses"
+    },
+    "passwordConfirm": {
+      "type": "string",
+      "writeOnly": true,
+      "description": "Password confirmation - only required on creation"
+    }
+  }
+}
+```
+
+</Accordion>
+
+## Format Annotation
+
+<Accordion title="format">
+
+**Type:** String
+
+**Purpose:** Provides semantic information about the string value's format.
+
+The `format` keyword conveys semantic information about string values and can optionally be used for validation. It describes standardized formats like email addresses, dates, and URIs.
+
+**Behavior:**
+- Value MUST be a string
+- Produces both an annotation and assertion result
+- Primarily applies to strings, but can be defined for any type
+- Implementations SHOULD provide assertion behavior for defined formats
+- Implementations MUST refuse to process schemas with unsupported format values
+
+**Common format values:**
+- `date-time` - RFC 3339 date-time
+- `date` - RFC 3339 full-date
+- `time` - RFC 3339 full-time
+- `duration` - ISO 8601 duration
+- `email` - RFC 5321 email address
+- `hostname` - RFC 1123 hostname
+- `ipv4` - IPv4 address
+- `ipv6` - IPv6 address
+- `uri` - RFC 3987 IRI
+- `uri-reference` - RFC 3986 URI reference
+- `uuid` - RFC 4122 UUID
+- `regex` - ECMA-262 regular expression
+- `json-pointer` - RFC 6901 JSON Pointer
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "website": {
+      "type": "string",
+      "format": "uri"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "birthDate": {
+      "type": "string",
+      "format": "date"
+    }
+  }
+}
+```
+
+</Accordion>
+
+## Content Encoding and Media Type
+
+These keywords describe string-encoded data.
+
+<Accordion title="contentEncoding">
+
+**Type:** String
+
+**Purpose:** Indicates that a string value contains encoded binary data.
+
+The `contentEncoding` keyword specifies the encoding used for binary data represented as a string, such as base64.
+
+**Behavior:**
+- Value MUST be a string
+- Produces an annotation result
+- Does not affect validation
+- Only applies to string instances
+- Common values: `base64`, `base32`, `base16` (from RFC 4648)
+- If absent but `contentMediaType` is present, encoding is identity (no transformation)
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "avatar": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "contentMediaType": "image/png"
+    }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="contentMediaType">
+
+**Type:** String (media type)
+
+**Purpose:** Indicates the media type of string contents.
+
+The `contentMediaType` keyword describes the type of content in a string value, particularly when combined with `contentEncoding`.
+
+**Behavior:**
+- Value MUST be a string
+- Value MUST be a media type per RFC 2046
+- Produces an annotation result
+- Does not affect validation
+- Only applies to string instances
+- If `contentEncoding` is present, describes the decoded content
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "htmlContent": {
+      "type": "string",
+      "contentMediaType": "text/html"
+    },
+    "attachment": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "contentMediaType": "application/pdf"
+    }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="contentSchema">
+
+**Type:** Valid JSON Schema
+
+**Purpose:** Describes the structure of string-encoded content.
+
+The `contentSchema` keyword provides a schema for validating the structure of data embedded as a string, typically used with `contentMediaType`.
+
+**Behavior:**
+- Value MUST be a valid JSON Schema
+- Produces an annotation result (the subschema itself)
+- Does not affect validation of the containing schema
+- Only applies to string instances
+- SHOULD NOT produce annotation if `contentMediaType` is absent
+- Applications must separately decode and validate the string content
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "jwtToken": {
+      "type": "string",
+      "contentMediaType": "application/jwt",
+      "contentSchema": {
+        "type": "array",
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "object",
+            "properties": {
+              "typ": { "const": "JWT" },
+              "alg": { "type": "string" }
+            },
+            "required": ["typ", "alg"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "iss": { "type": "string" },
+              "exp": { "type": "integer" }
+            },
+            "required": ["iss", "exp"]
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Accordion>

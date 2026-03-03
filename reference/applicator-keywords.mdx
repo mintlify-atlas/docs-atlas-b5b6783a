@@ -1,0 +1,435 @@
+---
+title: Applicator Keywords
+description: Keywords that apply subschemas to instances and combine their results
+---
+
+Applicator keywords apply subschemas to instance locations and combine their results. They enable complex schema composition and conditional validation.
+
+## Logic Applicators
+
+These keywords combine subschema results using boolean logic operations.
+
+<Accordion title="allOf">
+
+**Type:** Array (non-empty, each item must be a valid JSON Schema)
+
+**Purpose:** Validates that an instance satisfies all of the provided subschemas.
+
+The `allOf` keyword is used to ensure an instance conforms to multiple schemas simultaneously. All subschemas must validate successfully for the instance to be valid.
+
+**Validation:**
+- Value MUST be a non-empty array of valid JSON Schemas
+- Instance validates successfully if it validates against ALL schemas in the array
+- Conjunction (AND) of all subschema results
+
+**Example:**
+```json
+{
+  "allOf": [
+    { "type": "object" },
+    {
+      "properties": {
+        "name": { "type": "string" }
+      }
+    },
+    {
+      "properties": {
+        "age": { "type": "integer", "minimum": 0 }
+      }
+    }
+  ]
+}
+```
+
+</Accordion>
+
+<Accordion title="anyOf">
+
+**Type:** Array (non-empty, each item must be a valid JSON Schema)
+
+**Purpose:** Validates that an instance satisfies at least one of the provided subschemas.
+
+The `anyOf` keyword allows an instance to be valid against one or more schemas from a set. When collecting annotations, all subschemas must be examined.
+
+**Validation:**
+- Value MUST be a non-empty array of valid JSON Schemas
+- Instance validates successfully if it validates against AT LEAST ONE schema in the array
+- Disjunction (OR) of all subschema results
+- All subschemas MUST be examined when collecting annotations
+
+**Example:**
+```json
+{
+  "anyOf": [
+    { "type": "string", "minLength": 5 },
+    { "type": "number", "minimum": 0 }
+  ]
+}
+```
+
+</Accordion>
+
+<Accordion title="oneOf">
+
+**Type:** Array (non-empty, each item must be a valid JSON Schema)
+
+**Purpose:** Validates that an instance satisfies exactly one of the provided subschemas.
+
+The `oneOf` keyword ensures an instance matches only one schema from a set, making it useful for discriminated unions or mutually exclusive alternatives.
+
+**Validation:**
+- Value MUST be a non-empty array of valid JSON Schemas
+- Instance validates successfully if it validates against EXACTLY ONE schema in the array
+- Exclusive disjunction (XOR) of all subschema results
+
+**Example:**
+```json
+{
+  "oneOf": [
+    {
+      "properties": {
+        "type": { "const": "email" },
+        "address": { "type": "string", "format": "email" }
+      }
+    },
+    {
+      "properties": {
+        "type": { "const": "phone" },
+        "number": { "type": "string", "pattern": "^\\+?[1-9]\\d{1,14}$" }
+      }
+    }
+  ]
+}
+```
+
+</Accordion>
+
+<Accordion title="not">
+
+**Type:** Valid JSON Schema
+
+**Purpose:** Validates that an instance does NOT satisfy the provided subschema.
+
+The `not` keyword inverts the validation result of its subschema, making it useful for exclusion constraints.
+
+**Validation:**
+- Value MUST be a valid JSON Schema
+- Instance is valid if it FAILS to validate against the subschema
+- Logical negation (NOT) of the subschema result
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "not": { "enum": ["archived", "deleted"] }
+    }
+  }
+}
+```
+
+</Accordion>
+
+## Conditional Applicators
+
+These keywords enable conditional application of subschemas based on validation results.
+
+<Accordion title="if / then / else">
+
+**Type:** Each must be a valid JSON Schema
+
+**Purpose:** Applies subschemas conditionally based on whether the instance validates against the `if` schema.
+
+These three keywords work together to implement conditional logic. The `if` keyword controls which of `then` or `else` is evaluated.
+
+**Validation:**
+- If the instance validates against `if`, it must also validate against `then` (if present)
+- If the instance fails against `if`, it must validate against `else` (if present)
+- `if` without `then` or `else` only collects annotations
+- `then` and `else` MUST NOT interact across subschema boundaries
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "country": { "type": "string" },
+    "postalCode": { "type": "string" }
+  },
+  "if": {
+    "properties": {
+      "country": { "const": "US" }
+    }
+  },
+  "then": {
+    "properties": {
+      "postalCode": { "pattern": "^\\d{5}(-\\d{4})?$" }
+    }
+  },
+  "else": {
+    "properties": {
+      "postalCode": { "pattern": "^[A-Z0-9]+$" }
+    }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="dependentSchemas">
+
+**Type:** Object (each value must be a valid JSON Schema)
+
+**Purpose:** Applies subschemas to the entire instance when specific properties are present.
+
+The `dependentSchemas` keyword specifies validation rules that depend on the presence of particular properties in an object.
+
+**Validation:**
+- Value MUST be an object with schema values
+- If a property name from this keyword appears in the instance, the entire instance must validate against the corresponding subschema
+- Multiple dependent schemas may apply simultaneously
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "creditCard": { "type": "string" },
+    "billingAddress": { "type": "string" }
+  },
+  "dependentSchemas": {
+    "creditCard": {
+      "required": ["billingAddress"],
+      "properties": {
+        "billingAddress": { "minLength": 1 }
+      }
+    }
+  }
+}
+```
+
+</Accordion>
+
+## Array Applicators
+
+These keywords apply subschemas to array items.
+
+<Accordion title="prefixItems">
+
+**Type:** Array (non-empty, each item must be a valid JSON Schema)
+
+**Purpose:** Validates array items by position, applying different schemas to different indices.
+
+The `prefixItems` keyword allows tuple-like validation where each position in an array has its own schema.
+
+**Validation:**
+- Value MUST be a non-empty array of valid JSON Schemas
+- Each array element validates against the subschema at the same position
+- Does not constrain array length
+- Only validates positions present in both the keyword and the instance
+
+**Annotation:**
+- Produces the largest index to which a subschema was applied
+- May be boolean `true` if applied to every index
+
+**Example:**
+```json
+{
+  "type": "array",
+  "prefixItems": [
+    { "type": "string" },
+    { "type": "number" },
+    { "type": "boolean" }
+  ]
+}
+```
+
+</Accordion>
+
+<Accordion title="items">
+
+**Type:** Valid JSON Schema
+
+**Purpose:** Validates array items not covered by `prefixItems`, or all items if `prefixItems` is absent.
+
+The `items` keyword applies a single schema to array elements, typically those after a tuple prefix defined by `prefixItems`.
+
+**Validation:**
+- Value MUST be a valid JSON Schema
+- If `prefixItems` exists, applies to elements beyond those covered by `prefixItems`
+- If `prefixItems` is absent, applies to all array elements
+- Omitting has the same behavior as an empty schema
+
+**Annotation:**
+- Produces boolean `true` if applied to any positions
+
+**Example:**
+```json
+{
+  "type": "array",
+  "prefixItems": [
+    { "type": "string", "description": "Name" },
+    { "type": "number", "description": "Age" }
+  ],
+  "items": { "type": "string", "description": "Additional info" }
+}
+```
+
+</Accordion>
+
+<Accordion title="contains">
+
+**Type:** Valid JSON Schema
+
+**Purpose:** Validates that an array contains at least a minimum number (and optionally at most a maximum number) of items matching the subschema.
+
+The `contains` keyword ensures arrays include items matching specific criteria. Its behavior is modified by `minContains` and `maxContains`.
+
+**Validation:**
+- Value MUST be a valid JSON Schema
+- Counts how many array elements validate against the subschema
+- Valid if count is within the range defined by `minContains` (default 1) and `maxContains` (default unbounded)
+
+**Annotation:**
+- Produces an array of zero-based indices where validation succeeded
+- May be boolean `true` if all indices validated
+
+**Example:**
+```json
+{
+  "type": "array",
+  "contains": {
+    "type": "object",
+    "properties": {
+      "role": { "const": "admin" }
+    },
+    "required": ["role"]
+  },
+  "minContains": 1,
+  "maxContains": 3
+}
+```
+
+</Accordion>
+
+## Object Applicators
+
+These keywords apply subschemas to object properties.
+
+<Accordion title="properties">
+
+**Type:** Object (each value must be a valid JSON Schema)
+
+**Purpose:** Validates object properties by name, applying specific schemas to specific properties.
+
+The `properties` keyword defines schemas for named properties in an object.
+
+**Validation:**
+- Value MUST be an object with schema values
+- For each property name appearing in both the instance and this keyword, the property value must validate against the corresponding schema
+- Does not require properties to exist (use `required` for that)
+
+**Annotation:**
+- Produces the set of property names that were validated
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer", "minimum": 0 },
+    "email": { "type": "string", "format": "email" }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="patternProperties">
+
+**Type:** Object (property names should be valid regexes, values must be valid JSON Schemas)
+
+**Purpose:** Validates object properties whose names match regular expression patterns.
+
+The `patternProperties` keyword allows dynamic validation of properties based on name patterns.
+
+**Validation:**
+- Value MUST be an object with schema values
+- Property names SHOULD be valid regular expressions
+- For each instance property matching any regex pattern, the property value must validate against all matching schemas
+- Regular expressions are not implicitly anchored
+
+**Annotation:**
+- Produces the set of property names matched by at least one pattern
+
+**Example:**
+```json
+{
+  "type": "object",
+  "patternProperties": {
+    "^[sS]_": { "type": "string" },
+    "^[iI]_": { "type": "integer" },
+    "^[bB]_": { "type": "boolean" }
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="additionalProperties">
+
+**Type:** Valid JSON Schema
+
+**Purpose:** Validates object properties not covered by `properties` or `patternProperties`.
+
+The `additionalProperties` keyword applies to properties that weren't validated by `properties` or `patternProperties`.
+
+**Validation:**
+- Value MUST be a valid JSON Schema
+- Applies only to properties not matched by `properties` or `patternProperties`
+- Omitting has the same behavior as an empty schema (allows any additional properties)
+
+**Annotation:**
+- Produces the set of property names validated by this keyword
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer" }
+  },
+  "additionalProperties": false
+}
+```
+
+</Accordion>
+
+<Accordion title="propertyNames">
+
+**Type:** Valid JSON Schema
+
+**Purpose:** Validates that all property names in an object satisfy a schema.
+
+The `propertyNames` keyword validates the names themselves (which are always strings), not the property values.
+
+**Validation:**
+- Value MUST be a valid JSON Schema
+- Each property name in the instance must validate against the schema
+- Property names are always strings
+
+**Example:**
+```json
+{
+  "type": "object",
+  "propertyNames": {
+    "pattern": "^[a-z]+$"
+  }
+}
+```
+
+</Accordion>

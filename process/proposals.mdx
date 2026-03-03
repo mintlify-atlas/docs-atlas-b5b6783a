@@ -1,0 +1,152 @@
+---
+title: Creating Proposals
+description: How to create and submit proposals for new JSON Schema features
+---
+
+## Overview
+
+Proposals are formal documents that precisely define specification changes for new JSON Schema features. They serve as the bridge between initial concepts and stable implementation.
+
+## When to Create a Proposal
+
+A proposal should be created when:
+- Rough consensus has been reached on a feature concept in a GitHub issue
+- At least two Core Team members have implemented prototypes
+- The community is ready to move from discussion to formal specification
+
+## Proposal Structure
+
+All proposals use the official [Proposal Template](https://github.com/json-schema-org/json-schema-spec/blob/main/specs/proposals/proposal-template.md) and must include the following sections:
+
+### Required Sections
+
+<Steps>
+  <Step title="Abstract">
+    Identify which specification(s) will change and provide a brief summary.
+    
+    **Example:**
+    ```markdown
+    This document proposes a change to the JSON Schema Core specification and
+    Applicator vocabulary by adding the `propertyDependencies` keyword.
+    ```
+  </Step>
+
+  <Step title="Current Status">
+    Explain where the proposal is in its journey (free text, not tied to the formal lifecycle stages).
+  </Step>
+
+  <Step title="Overview">
+    Include three key subsections:
+    
+    **Problem Statement**: What problem exists that needs solving?
+    
+    **Solution**: What is the proposed solution? Include examples of use.
+    
+    **Limitations**: Are there any limitations inherent to the proposal?
+  </Step>
+
+  <Step title="Change Details">
+    Define the precise specification changes. These changes will be made **verbatim** to the specification.
+    
+    **Example format:**
+    
+    The proposal should include:
+    
+    1. The following section will be added to the JSON Schema Core specification as a subsection of "Keywords for Applying Subschemas Conditionally".
+    
+    2. The following subschema will be added to the Applicator Vocabulary schema at `/properties/{keyword}` with the keyword schema definition in JSON format.
+  </Step>
+
+  <Step title="Change Log">
+    Track all updates to the proposal document with dates.
+  </Step>
+
+  <Step title="Champions">
+    List the proposal champions with their contact information and GitHub profiles.
+  </Step>
+</Steps>
+
+## Accompanying Documentation
+
+### Draft ADR (Architectural Decision Record)
+
+Along with the proposal document, create a draft ADR using the file name:
+```
+{proposal-file-name}-adr.md
+```
+
+The ADR should include:
+- Context and problem statement
+- Decision drivers
+- Considered options (with pros and cons)
+- Decision outcome and justification
+- Additional information from the "Concept" discussion
+
+<Info>
+The draft ADR will be completed, dated, and moved to the `adr` folder when the feature becomes stable.
+</Info>
+
+## Experimental Keywords in Meta-schemas
+
+When a proposal is created, the proposed keywords are added to the vocabulary meta-schemas in:
+- Latest published release
+- The `main` branch of the repository
+
+### Experimental Keyword Format
+
+The subschema for experimental keywords contains only a `$comment`:
+
+```json
+{
+  "$comment": "This keyword is experimental. See proposal: [link-to-proposal]"
+}
+```
+
+<Note>
+This approach allows the keyword without validating its syntax, since the syntax may change during experimentation. It permits different implementations to support different variations of each proposal.
+</Note>
+
+## Adding Tests
+
+Tests for the proposal must be added to the JSON Schema Test Suite during the proposal stage. This allows implementations to verify their support for the experimental feature.
+
+## Moving to Stable
+
+A proposal moves from experimentation to stable when:
+
+<CardGroup cols={3}>
+  <Card title="Implementation Support" icon="code">
+    At least **5 implementations** support the feature
+  </Card>
+  <Card title="Usage Evidence" icon="users">
+    Sufficient evidence of real-world use
+  </Card>
+  <Card title="Stability Period" icon="clock">
+    No changes requested for **6 weeks**
+  </Card>
+</CardGroup>
+
+### Integration Process
+
+When a feature becomes stable:
+
+1. The feature is incorporated into the specification in the `main` branch as specified by the proposal
+2. The draft ADR is completed, dated, and moved to the `adr` folder
+3. The vocabulary meta-schema in `main` is updated to include a subschema that validates the feature's syntax requirements
+4. Tests are incorporated into the main test suite
+5. Upon publication of the new release, the meta-schema for the previous release will have the keyword removed
+
+<Warning>
+Breaking changes to a proposed feature during experimentation are highly discouraged, though they may occur.
+</Warning>
+
+## Proposal Removal
+
+If a proposal cannot advance to stable status, it may be removed:
+- Proposal document is moved to an `archive` subfolder
+- Keyword is removed from meta-schemas
+- Tests are moved to an `archive` subfolder
+
+<Info>
+Removal of a feature that hasn't reached stable status is not considered a breaking change.
+</Info>

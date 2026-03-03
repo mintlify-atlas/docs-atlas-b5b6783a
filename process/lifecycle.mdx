@@ -1,0 +1,140 @@
+---
+title: Feature Lifecycle
+description: Understanding how features progress from concept to stable release in JSON Schema
+---
+
+## Overview
+
+New features in JSON Schema progress through a structured sequence of stages before being added to the specification. Similarly, existing stable features must be formally deprecated before removal. This lifecycle ensures thorough vetting, community feedback, and implementation testing.
+
+## Lifecycle Stages
+
+<Steps>
+  <Step title="Concept">
+    The feature lifecycle begins with an idea expressed in a **GitHub issue** in the JSON Schema specification repository.
+    
+    ### Discussion Topics
+    
+    Initial discussion should cover:
+    - How the feature could work
+    - Use cases
+    - Syntax considerations
+    - Alternative approaches
+    - Whether it's a breaking change
+    - Rough requirements
+    
+    ### Prototype Requirement
+    
+    During this stage, Core Team members implement private prototypes to evaluate:
+    - Does the idea operate within existing JSON Schema evaluation processes, or does it define something new?
+    - Is it syntactic sugar for existing functionality, or does it solve a previously unsolvable problem?
+    - What is the expected implementation complexity?
+    
+    <Info>
+    At least **two (2) Core Team members** must have implemented prototypes before the concept can advance to a formal proposal.
+    </Info>
+  </Step>
+
+  <Step title="Proposal">
+    Once rough consensus is reached, a **formal proposal** is written to precisely define specification changes.
+    
+    ### Proposal Requirements
+    
+    - Use the official Proposal Template
+    - Store in the repository's `proposals` folder
+    - Include a draft ADR (Architectural Decision Record) with the `-adr` suffix
+    - Add proposed keywords to vocabulary meta-schemas
+    
+    ### Experimental Keywords
+    
+    Proposed keywords are added to:
+    - Latest published release meta-schema
+    - The `main` branch of the repository
+    
+    <Note>
+    The subschema for proposed keywords contains only a `$comment` keyword indicating experimental status and linking to the proposal. This allows the keyword but doesn't validate syntax, permitting implementations to support different variations.
+    </Note>
+    
+    Tests for the proposal are also added to the JSON Schema Test Suite.
+  </Step>
+
+  <Step title="Experimentation">
+    Implementations begin supporting the new feature. This stage involves:
+    
+    ### Feedback and Refinement
+    
+    - Implementers and users provide feedback
+    - Proposals are refined based on real-world use
+    - Implementations are updated to match refinements
+    
+    <Warning>
+    Breaking changes to a proposed feature MAY occur during experimentation, but are highly discouraged.
+    </Warning>
+    
+    ### Advancement Requirements
+    
+    To proceed to Stable status:
+    - **At least five (5) implementations** support the feature
+    - Sufficient evidence of use exists
+    - **No changes are requested** for a period of **six (6) weeks**
+    
+    <Info>
+    Experimental features are not considered interoperable across implementations.
+    </Info>
+    
+    ### Removal Option
+    
+    If a proposal cannot advance, it may be removed:
+    - Proposal document moves to an `archive` subfolder
+    - Keyword is removed from meta-schemas
+    - Tests move to an `archive` subfolder
+    
+    <Note>
+    Removal of a feature that hasn't reached stable status is NOT considered a breaking change.
+    </Note>
+  </Step>
+
+  <Step title="Stable">
+    The feature is incorporated into the specification in the `main` branch as specified by the proposal document.
+    
+    ### Requirements
+    
+    - Feature becomes **required** as of the next release
+    - Draft ADR is completed, dated, and moved to the `adr` folder
+    - Vocabulary meta-schema in `main` is updated with validation requirements
+    - Tests are incorporated into the main suite
+    
+    <Info>
+    Upon publication of the new release, the meta-schema for the previous release will have the keyword removed.
+    </Info>
+  </Step>
+
+  <Step title="Deprecated">
+    If a feature is no longer useful (e.g., it has been replaced), it may be deprecated by marking it as such in the specification.
+    
+    <Warning>
+    Implementations **must** support deprecated features.
+    </Warning>
+  </Step>
+
+  <Step title="Removed">
+    The final stage is complete removal from the specification.
+    
+    ### Requirements for Removal
+    
+    - Feature must have been published as **deprecated for at least one release**
+    - Removal is considered a **breaking change**
+  </Step>
+</Steps>
+
+## Lifecycle Flow Diagram
+
+The progression through these stages can be visualized as:
+
+```
+Concept → Proposal ⇄ Experimentation → Stable → Deprecated → Removed
+            └─────────────┘
+           (Development Phase)
+```
+
+The Proposal and Experimentation stages form a **Development Phase** where features can iterate back and forth between proposal refinement and experimental implementation until ready for stable release.

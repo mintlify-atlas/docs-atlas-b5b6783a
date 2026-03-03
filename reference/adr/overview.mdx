@@ -1,0 +1,75 @@
+---
+title: "Architecture Decision Records"
+description: "Overview of architectural decisions for the JSON Schema specification"
+---
+
+## What are ADRs?
+
+Architectural Decision Records (ADRs) document significant architectural decisions made for the JSON Schema specification. Each ADR captures the context, options considered, and rationale behind important choices that shape how JSON Schema works and evolves.
+
+<Info>
+ADRs help the community understand why certain design decisions were made and provide transparency into the specification development process.
+</Info>
+
+These records follow the [MADR (Markdown Any Decision Records)](https://adr.github.io/madr/) format and are maintained in the [JSON Schema specification repository](https://github.com/json-schema-org/json-schema-spec).
+
+## Purpose
+
+ADRs serve multiple purposes:
+
+- **Historical Context**: Preserve the reasoning behind important decisions
+- **Transparency**: Make the decision-making process visible to the community
+- **Learning**: Help new contributors understand the specification's evolution
+- **Reference**: Provide a record for future discussions and decisions
+
+## All Architecture Decision Records
+
+<CardGroup cols={2}>
+  <Card title="Stable Specification" icon="check" href="/reference/adr/stable-spec">
+    **November 2022** - Selecting a new specification development process with stability guarantees
+  </Card>
+  
+  <Card title="Assertion Format" icon="clipboard-check" href="/reference/adr/assertion-format">
+    **November 2024** - Making `format` an assertion keyword by default
+  </Card>
+  
+  <Card title="Decouple from IETF" icon="link-slash">
+    **September 2022** - Decision to decouple from IETF standards process
+  </Card>
+  
+  <Card title="Single-Value Annotations" icon="tag">
+    **April 2023** - Supporting custom annotations via the `x-` prefix
+  </Card>
+  
+  <Card title="Extract Unstable Keywords" icon="filter">
+    **May 2024** - Extracting unstable features before stable release
+  </Card>
+  
+  <Card title="Contains and Objects" icon="brackets-curly">
+    **November 2023** - Decision on `contains` keyword scope for arrays vs objects
+  </Card>
+  
+  <Card title="AdditionalProperties Ambiguity" icon="triangle-exclamation">
+    **April 2022** - Acknowledging ambiguity in `additionalProperties` behavior
+  </Card>
+</CardGroup>
+
+## Creating New ADRs
+
+<Note>
+For new ADRs, the JSON Schema team uses a [template](https://github.com/json-schema-org/json-schema-spec/blob/main/adr/template.md) based on MADR. More information about architectural decision records is available at [adr.github.io](https://adr.github.io/).
+</Note>
+
+The ADR process is also documented in the [JSON Schema community repository](https://github.com/json-schema-org/community/tree/HEAD/docs/adr).
+
+## Timeline of Major Decisions
+
+| Date | ADR | Impact |
+|------|-----|--------|
+| April 2022 | AdditionalProperties Ambiguity | Acknowledged specification ambiguity for patch release |
+| September 2022 | Decouple from IETF | Major process change moving away from IETF |
+| November 2022 | Stable Specification | Adopted new development process with stability guarantees |
+| April 2023 | Single-Value Annotations | Enabled custom keywords with `x-` prefix |
+| November 2023 | Contains and Objects | Reverted `contains` to apply only to arrays |
+| May 2024 | Extract Unstable Keywords | Removed unstable features before stable release |
+| November 2024 | Assertion Format | Changed `format` to validate by default |

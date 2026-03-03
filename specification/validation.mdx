@@ -1,0 +1,773 @@
+---
+title: 'Validation Specification'
+description: 'Validation keywords for structural validation and metadata annotations in JSON Schema'
+---
+
+## Overview
+
+The JSON Schema Validation specification defines a vocabulary for describing the structure and constraints of JSON documents. It provides keywords for validation (assertions) and metadata (annotations) that work together with the Core specification.
+
+This specification defines keywords for:
+- Type validation
+- Numeric constraints
+- String validation
+- Array constraints  
+- Object validation
+- Format semantic validation
+- Metadata annotations
+
+<Info>
+Validation keywords are assertions that produce a boolean result. An instance is valid if it satisfies **all** asserted constraints.
+</Info>
+
+## Type Validation
+
+### `type`
+
+The `type` keyword restricts an instance to one or more primitive types.
+
+**Value**: A string or array of strings.
+
+**Allowed Types**:
+- `"null"`
+- `"boolean"`
+- `"object"`
+- `"array"`
+- `"number"`
+- `"string"`
+- `"integer"` (numbers with zero fractional part)
+
+```json
+{
+  "type": "string"
+}
+```
+
+```json
+{
+  "type": ["string", "null"]
+}
+```
+
+<Note>
+`"integer"` is not a primitive type in the JSON data model but is defined as a convenience for matching numbers with zero fractional parts.
+</Note>
+
+### `enum`
+
+Restricts the instance to a fixed set of values.
+
+**Value**: An array (elements SHOULD be unique).
+
+```json
+{
+  "enum": ["red", "green", "blue"]
+}
+```
+
+```json
+{
+  "type": "string",
+  "enum": ["pending", "approved", "rejected", null]
+}
+```
+
+### `const`
+
+Restricts the instance to a single value.
+
+**Value**: Any JSON value.
+
+```json
+{
+  "const": "fixed-value"
+}
+```
+
+```json
+{
+  "const": 42
+}
+```
+
+<Info>
+Using `const` is functionally equivalent to `enum` with a single value, but makes the intent clearer.
+</Info>
+
+## Numeric Validation
+
+Numeric validation keywords apply to both `number` and `integer` types. If the instance is not a number, validation succeeds (allowing multi-type schemas).
+
+### Range Constraints
+
+<Accordion title="minimum and maximum">
+**Inclusive** bounds for numeric values.
+
+```json
+{
+  "type": "number",
+  "minimum": 0,
+  "maximum": 100
+}
+```
+
+Valid: `0`, `50`, `100`  
+Invalid: `-1`, `101`
+</Accordion>
+
+<Accordion title="exclusiveMinimum and exclusiveMaximum">
+**Exclusive** bounds for numeric values.
+
+```json
+{
+  "type": "number",
+  "exclusiveMinimum": 0,
+  "exclusiveMaximum": 1
+}
+```
+
+Valid: `0.1`, `0.5`, `0.999`  
+Invalid: `0`, `1`
+</Accordion>
+
+### `multipleOf`
+
+Restricts numbers to multiples of a given value.
+
+**Value**: A number strictly greater than 0.
+
+```json
+{
+  "type": "number",
+  "multipleOf": 0.01
+}
+```
+
+Valid: `1.23`, `5.67`, `0.01`  
+Invalid: `1.234`
+
+```json
+{
+  "type": "integer",
+  "multipleOf": 5
+}
+```
+
+Valid: `0`, `5`, `10`, `-15`  
+Invalid: `3`, `7`
+
+## String Validation
+
+String validation keywords only apply when the instance is a string.
+
+### Length Constraints
+
+<Accordion title="minLength and maxLength">
+Constrain the length of strings (measured in Unicode code points).
+
+```json
+{
+  "type": "string",
+  "minLength": 3,
+  "maxLength": 20
+}
+```
+
+Valid: `"abc"`, `"hello world"`  
+Invalid: `"ab"`, `"this string is way too long"`
+
+<Note>
+Omitting `minLength` is equivalent to a value of `0`.
+</Note>
+</Accordion>
+
+### `pattern`
+
+Validates strings against a regular expression.
+
+**Value**: A string representing a valid ECMA-262 regular expression.
+
+```json
+{
+  "type": "string",
+  "pattern": "^[A-Z][a-z]+$"
+}
+```
+
+Valid: `"Hello"`, `"World"`  
+Invalid: `"hello"`, `"WORLD"`
+
+<Info>
+Regular expressions are **not implicitly anchored**. The pattern `"es"` matches `"expression"`.
+</Info>
+
+## Array Validation
+
+Array validation keywords only apply when the instance is an array.
+
+### Size Constraints
+
+<Accordion title="minItems and maxItems">
+Constrain the number of elements in an array.
+
+```json
+{
+  "type": "array",
+  "minItems": 1,
+  "maxItems": 5
+}
+```
+
+Valid: `[1]`, `[1, 2, 3]`  
+Invalid: `[]`, `[1, 2, 3, 4, 5, 6]`
+
+<Note>
+Omitting `minItems` is equivalent to a value of `0`.
+</Note>
+</Accordion>
+
+### `uniqueItems`
+
+Requires all array elements to be unique.
+
+**Value**: A boolean.
+
+```json
+{
+  "type": "array",
+  "uniqueItems": true
+}
+```
+
+Valid: `[1, 2, 3]`, `["a", "b", "c"]`  
+Invalid: `[1, 2, 1]`, `["a", "a"]`
+
+<Note>
+Omitting this keyword or setting it to `false` allows duplicate elements.
+</Note>
+
+## Object Validation
+
+Object validation keywords only apply when the instance is an object.
+
+### Size Constraints
+
+<Accordion title="minProperties and maxProperties">
+Constrain the number of properties in an object.
+
+```json
+{
+  "type": "object",
+  "minProperties": 1,
+  "maxProperties": 10
+}
+```
+
+Valid: `{"a": 1}`, `{"a": 1, "b": 2}`  
+Invalid: `{}`, (object with 11 properties)
+
+<Note>
+Omitting `minProperties` is equivalent to a value of `0`.
+</Note>
+</Accordion>
+
+### `required`
+
+Specifies which properties must be present.
+
+**Value**: An array of strings (MUST be unique).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "email": { "type": "string" },
+    "age": { "type": "integer" }
+  },
+  "required": ["name", "email"]
+}
+```
+
+Valid: `{"name": "John", "email": "john@example.com"}`  
+Invalid: `{"name": "John"}`, `{"email": "john@example.com"}`
+
+### `dependentRequired`
+
+Specifies properties that are required when another property is present.
+
+**Value**: An object mapping property names to arrays of required property names.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "creditCard": { "type": "string" },
+    "cvv": { "type": "string" },
+    "billingAddress": { "type": "string" }
+  },
+  "dependentRequired": {
+    "creditCard": ["cvv", "billingAddress"]
+  }
+}
+```
+
+Valid:
+- `{}` (no credit card)
+- `{"creditCard": "1234", "cvv": "123", "billingAddress": "..."}`
+
+Invalid:
+- `{"creditCard": "1234"}` (missing cvv and billingAddress)
+- `{"creditCard": "1234", "cvv": "123"}` (missing billingAddress)
+
+## Format Validation
+
+The `format` keyword provides semantic validation for strings representing well-known data formats.
+
+**Value**: A string identifying the format.
+
+**Behavior**: 
+- Acts as both an **assertion** (validation) and **annotation**
+- Implementations SHOULD provide validation for standard formats
+- Implementations MUST refuse to process schemas with unsupported formats
+
+<Info>
+Starting with JSON Schema v1/2026, `format` is required to provide assertion behavior by default. This is a change from previous drafts where it was annotation-only.
+</Info>
+
+### Date and Time Formats
+
+Based on RFC 3339 and RFC 9557:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "birthday": {
+      "type": "string",
+      "format": "date"
+    },
+    "appointmentTime": {
+      "type": "string",
+      "format": "time"
+    },
+    "duration": {
+      "type": "string",
+      "format": "duration"
+    }
+  }
+}
+```
+
+**Formats**:
+- `date-time`: `2026-03-03T14:30:00Z`
+- `date`: `2026-03-03`
+- `time`: `14:30:00`
+- `duration`: `P3Y6M4DT12H30M5S`
+
+### Email Format
+
+```json
+{
+  "type": "string",
+  "format": "email"
+}
+```
+
+Valid: `user@example.com`
+
+### Hostname Format
+
+```json
+{
+  "type": "string",
+  "format": "hostname"
+}
+```
+
+Valid: `example.com`, `api.example.com`
+
+### IP Address Formats
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ipv4Address": {
+      "type": "string",
+      "format": "ipv4"
+    },
+    "ipv6Address": {
+      "type": "string",
+      "format": "ipv6"
+    }
+  }
+}
+```
+
+**Formats**:
+- `ipv4`: `192.168.1.1`
+- `ipv6`: `2001:0db8:85a3:0000:0000:8a2e:0370:7334`
+
+### Resource Identifier Formats
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "website": { "format": "uri" },
+    "link": { "format": "uri-reference" },
+    "iri": { "format": "iri" },
+    "iriRef": { "format": "iri-reference" },
+    "id": { "format": "uuid" }
+  }
+}
+```
+
+**Formats**:
+- `uri`: `https://example.com/path`
+- `uri-reference`: `/path/to/resource` or `https://example.com`
+- `iri`: International Resource Identifier
+- `iri-reference`: IRI or relative reference
+- `uuid`: `f81d4fae-7dec-11d0-a765-00a0c91e6bf6`
+
+### Other Formats
+
+<Accordion title="uri-template">
+```json
+{
+  "type": "string",
+  "format": "uri-template"
+}
+```
+
+Valid: `https://example.com/users/{id}`
+</Accordion>
+
+<Accordion title="json-pointer">
+```json
+{
+  "type": "string",
+  "format": "json-pointer"
+}
+```
+
+Valid: `/properties/name`, `/items/0`
+</Accordion>
+
+<Accordion title="relative-json-pointer">
+```json
+{
+  "type": "string",
+  "format": "relative-json-pointer"
+}
+```
+
+Valid: `0/name`, `1/items/0`
+</Accordion>
+
+<Accordion title="regex">
+```json
+{
+  "type": "string",
+  "format": "regex"
+}
+```
+
+Validates that the string is a valid ECMA-262 regular expression.
+</Accordion>
+
+## Content Keywords
+
+Content keywords annotate strings containing non-JSON data encoded within JSON strings.
+
+<Note>
+**Important**: These are **annotation-only** keywords. Implementations MUST NOT automatically decode, parse, or validate the content due to security and performance concerns.
+</Note>
+
+### `contentEncoding`
+
+Indicates that a string should be interpreted as encoded binary data.
+
+**Value**: A string (e.g., `"base64"`, `"base32"`, `"base16"`).
+
+```json
+{
+  "type": "string",
+  "contentEncoding": "base64"
+}
+```
+
+### `contentMediaType`
+
+Indicates the media type of string contents.
+
+**Value**: A media type string (RFC 2046).
+
+```json
+{
+  "type": "string",
+  "contentMediaType": "application/json"
+}
+```
+
+### `contentSchema`
+
+Describes the structure of string contents (when `contentMediaType` is present).
+
+**Value**: A valid JSON schema.
+
+```json
+{
+  "type": "string",
+  "contentMediaType": "application/json",
+  "contentSchema": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string" },
+      "age": { "type": "integer" }
+    },
+    "required": ["name"]
+  }
+}
+```
+
+### Example: Base64-Encoded Image
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "avatar": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "contentMediaType": "image/png"
+    }
+  }
+}
+```
+
+### Example: JWT Token
+
+```json
+{
+  "type": "string",
+  "contentMediaType": "application/jwt",
+  "contentSchema": {
+    "type": "array",
+    "minItems": 2,
+    "prefixItems": [
+      {
+        "const": {
+          "typ": "JWT",
+          "alg": "HS256"
+        }
+      },
+      {
+        "type": "object",
+        "required": ["iss", "exp"],
+        "properties": {
+          "iss": { "type": "string" },
+          "exp": { "type": "integer" }
+        }
+      }
+    ]
+  }
+}
+```
+
+## Metadata Annotations
+
+Metadata keywords provide information for documentation and user interfaces. They do **not** affect validation.
+
+### `title` and `description`
+
+```json
+{
+  "title": "User Profile",
+  "description": "A user profile containing personal information and preferences",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Full Name",
+      "description": "The user's complete name",
+      "type": "string"
+    }
+  }
+}
+```
+
+### `default`
+
+Provides a default value (annotation only).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "theme": {
+      "type": "string",
+      "enum": ["light", "dark", "auto"],
+      "default": "auto"
+    },
+    "pageSize": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 20
+    }
+  }
+}
+```
+
+<Info>
+The `default` value is RECOMMENDED to be valid against the schema, but this is not enforced.
+</Info>
+
+### `deprecated`
+
+Indicates that a property or schema should no longer be used.
+
+**Value**: A boolean.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "oldField": {
+      "type": "string",
+      "deprecated": true
+    },
+    "newField": {
+      "type": "string"
+    }
+  }
+}
+```
+
+### `readOnly` and `writeOnly`
+
+Indicate data flow restrictions.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "readOnly": true
+    },
+    "password": {
+      "type": "string",
+      "writeOnly": true
+    },
+    "email": {
+      "type": "string"
+    }
+  }
+}
+```
+
+- `readOnly: true` - Value is managed by the owning authority, modification attempts should be ignored
+- `writeOnly: true` - Value is never returned when retrieved from the owning authority
+
+### `examples`
+
+Provides sample values.
+
+**Value**: An array.
+
+```json
+{
+  "type": "string",
+  "pattern": "^[A-Z]{2}$",
+  "examples": ["US", "CA", "UK", "FR"]
+}
+```
+
+## Assertion vs Annotation Behavior
+
+JSON Schema keywords exhibit different behaviors:
+
+### Assertions
+
+Produce a boolean result (`true` or `false`):
+- `type`, `minimum`, `maximum`, `minLength`, `maxLength`
+- `pattern`, `minItems`, `maxItems`, `required`
+- `format` (as of v1/2026)
+
+**Validation succeeds** only if all assertions pass.
+
+### Annotations
+
+Attach metadata to instance locations:
+- `title`, `description`, `default`
+- `deprecated`, `readOnly`, `writeOnly`, `examples`
+- `contentEncoding`, `contentMediaType`, `contentSchema`
+
+<Info>
+Schemas that fail validation MUST NOT produce annotation results, even from their annotation keywords.
+</Info>
+
+## Complete Example
+
+Here's a comprehensive schema using validation and metadata keywords:
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "$id": "https://example.com/schemas/product.json",
+  "title": "Product",
+  "description": "A product available for purchase",
+  "type": "object",
+  "required": ["id", "name", "price"],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Unique product identifier",
+      "readOnly": true
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Product name"
+    },
+    "price": {
+      "type": "number",
+      "minimum": 0,
+      "exclusiveMinimum": true,
+      "description": "Price in USD"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "default": []
+    },
+    "sku": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}-\\d{4}$",
+      "examples": ["ABC-1234", "XYZ-5678"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "active", "archived"],
+      "default": "draft"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    }
+  }
+}
+```
+
+<Info>
+For the complete Validation specification, visit [json-schema.org](https://json-schema.org/)
+</Info>

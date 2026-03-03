@@ -1,0 +1,102 @@
+---
+title: "Welcome to JSON Schema"
+description: "A vocabulary that allows you to validate, annotate, and manipulate JSON documents"
+---
+
+## What is JSON Schema?
+
+JSON Schema is a vocabulary that allows you to **validate, annotate, and manipulate JSON documents**. It provides a standardized way to define the contracts for JSON-based APIs and data formats, facilitating automated validation, documentation, and other related tooling.
+
+JSON is a widely used, language-independent data format. While it is excellent for data exchange, JSON itself lacks a native mechanism for formally describing its structure and constraints. This absence can lead to ambiguity and errors in data interchange, particularly in contexts such as API development, configuration files, and data storage.
+
+JSON Schema can be represented as a JSON document itself, which makes it easily portable and machine-readable.
+
+<Info>
+JSON Schema draws inspiration from the architecture of the World Wide Web, including concepts such as URIs for identifying and linking schemas. While it can be applied in many domains, those qualities make it especially well-suited for describing and validating data exchanged in web APIs.
+</Info>
+
+## Core Purpose: Validation and Annotation
+
+A JSON Schema serves as a **contract for data**. It is primarily designed for two purposes:
+
+1. **Validation** - Ensures that a JSON instance conforms to a specific structure and set of constraints
+2. **Annotation** - Attaches metadata to values in a JSON document, which can be used by applications in a variety of ways
+
+JSON Schema can also be used for a variety of other use cases, including documentation generation, HTML form builders, and type code generation. Although it is not specifically designed for those tasks, JSON Schema can be extended to fill any gaps required to support these secondary uses.
+
+## How JSON Schema Works
+
+A JSON Schema represents a set of constraints and annotations that are applied to a JSON value. These constraints and annotations are declared using "keywords". A JSON value is considered valid against a schema if, and only if, it satisfies the constraint defined by every keyword in that schema.
+
+<Note>
+Schema evaluation is a recursive process. Some keywords contain one or more subschemas. These keywords can be used to create complex constraints or to describe compound values like arrays and objects.
+</Note>
+
+For example, to describe a JSON object, a schema can use the `type` keyword to declare that the value MUST be an object, and the `properties` keyword to apply separate schemas to each of the object's properties. This allows for the evaluation of a complex JSON document using a uniform recursive algorithm.
+
+## Simple Schema Example
+
+Here's a basic example of a JSON Schema:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "number" },
+    "email": { "type": "string" }
+  },
+  "required": ["name", "email"]
+}
+```
+
+This schema validates JSON objects that:
+- Must be an object type
+- Can have `name`, `age`, and `email` properties
+- The `name` and `email` properties are required
+- The `name` and `email` must be strings
+- The `age` (if present) must be a number
+
+## Data Model
+
+JSON Schema interprets documents according to a data model. An instance has one of six primitive types:
+
+- **null** - A JSON "null" value
+- **boolean** - A "true" or "false" value
+- **object** - An unordered set of properties mapping a string to an instance
+- **array** - An ordered list of instances
+- **number** - An arbitrary-precision, base-10 decimal number value
+- **string** - A string of Unicode code points
+
+<Info>
+Whitespace and formatting concerns, including different lexical representations of numbers that are equal within the data model, are outside the scope of JSON Schema.
+</Info>
+
+## Get Started
+
+<CardGroup cols={2}>
+  <Card title="Understanding JSON Schema" icon="book" href="/understanding-json-schema">
+    Learn the basics of JSON Schema with examples and tutorials
+  </Card>
+  
+  <Card title="Core Specification" icon="file-lines" href="/specification/core">
+    Read the official JSON Schema core specification
+  </Card>
+  
+  <Card title="Validation Keywords" icon="check-circle" href="/reference/validation-keywords">
+    Explore the validation vocabulary and keywords
+  </Card>
+  
+  <Card title="Core Keywords" icon="key" href="/reference/core-keywords">
+    Reference guide for core JSON Schema keywords
+  </Card>
+</CardGroup>
+
+## Extensible Vocabularies
+
+JSON Schema defines an official collection of keywords (called a dialect), but it also includes a flexible extension model that allows for third-parties to define their own dialects of JSON Schema.
+
+The specification is defined in a series of documents, each addressing a different aspect of the language:
+- **Core Specification** - Defines the fundamental keywords and concepts
+- **Validation Specification** - Defines keywords for structural validation
+- Additional vocabularies can be defined for specific use cases

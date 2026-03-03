@@ -1,0 +1,92 @@
+---
+title: Development Process Overview
+description: Understanding the JSON Schema specification development and publication process
+---
+
+## Purpose
+
+The JSON Schema specification follows a structured development and publication process to ensure stability, quality, and community involvement. This process governs the two main specifications:
+
+- JSON Schema Core
+- JSON Schema Validation
+
+## Release Cycle
+
+JSON Schema follows an **annual release cycle**, aiming to publish on or about **January 1st** each year.
+
+### Version Identification
+
+Releases are identified by the year they are published (e.g., 2026, 2027). The versioning system works as follows:
+
+- **Release**: A single publication of the JSON Schema specifications as a group
+- **Version**: A series of consecutive releases that maintain compatibility with each other
+- Versions are identified as integers, starting with `1` and incrementing as needed
+
+<Info>
+When a new release contains breaking changes, that release begins a new version of JSON Schema.
+</Info>
+
+## Stability and Breaking Changes
+
+Stability is a core priority in JSON Schema development. The specification is considered **stable** when schemas written for one release produce the same defined behavior in the following release.
+
+### Defined vs. Undefined Behavior
+
+**Defined behavior** is fully and unambiguously defined by the specifications. **Undefined behavior** has an "indeterminate" validation result since implementations may resolve it in different ways.
+
+### Breaking Changes
+
+A release contains **breaking changes** when:
+- An existing schema under the new release exhibits defined behavior that contradicts the defined behavior under the previous release
+- The specification becomes unstable between releases
+
+<Warning>
+Breaking changes are undesired and should be avoided when possible. Stability is always prioritized.
+</Warning>
+
+<Note>
+Defining a previously undefined behavior is NOT considered a breaking change, even if it contradicts a particular implementation's decision.
+</Note>
+
+### Compatibility Matrix
+
+This table shows validation result compatibility between consecutive releases:
+
+| *Next* ➡️ / ⬇️ *Current* | pass | fail | indeterminate |
+| :-----------------------: | :--: | :--: | :-----------: |
+|          **pass**         |  ✅   |  ❌   |       ❌       |
+|          **fail**         |  ❌   |  ✅   |       ❌       |
+|     **indeterminate**     |  ✅   |  ✅   |       ✅       |
+
+## Publication Structure
+
+### Specification Documents
+
+Specifications are published on the JSON Schema website at `https://json-schema.org/` using a path comprised of the version, year, and document name:
+
+```
+https://json-schema.org/v1/2026/core.html
+https://json-schema.org/v1/2026/validation.html
+```
+
+<Warning>
+Once published, neither the document (except for minor errata like spelling mistakes) nor its publication URL may change.
+</Warning>
+
+### Meta-schemas
+
+Release meta-schemas are published under the same path structure:
+
+```
+https://json-schema.org/v1/2026/schema.json
+```
+
+The website is configured to serve meta-schemas from:
+- **Release folder**: `https://json-schema.org/v1/2026/`
+- **Version folder** (latest release): `https://json-schema.org/v1/`
+
+<Info>
+These are publication and availability URLs. The specification defines the `$id` values for the meta-schemas separately.
+</Info>
+
+The latest-release meta-schemas are updated with proposals during the experimentation phase.

@@ -1,0 +1,142 @@
+---
+title: "Stable Specification (2022-11)"
+description: "Selecting a new specification development process with stability guarantees"
+---
+
+<Info>
+**Status**: Accepted  
+**Date**: November 2, 2022  
+**Deciders**: @jdesrosiers @relequestual @awwright @handrews @gregsdennis
+</Info>
+
+## Context and Problem Statement
+
+JSON Schema had been loosely following the IETF process but needed to choose a new specification development process after decoupling from IETF. The community wanted a stable version of JSON Schema while still allowing the specification to evolve and meet changing needs.
+
+## Decision Drivers
+
+Several key factors influenced this decision:
+
+- **Dropping the "draft" label**: An artifact of the IETF process that had proven confusing for the community
+- **Community demand**: Strong desire for a stable version of JSON Schema
+- **Evolution needs**: JSON Schema must continue to evolve to remain relevant
+- **Custom extensions**: Support for custom keywords, vocabularies, and dialects must continue
+- **Implementation burden**: Need to reduce the burden of implementations supporting multiple versions
+
+## Options Considered
+
+Three main approaches were evaluated:
+
+<Accordion title="Option 1 - TC-39 Inspired (CHOSEN)">
+  ### Mutable Spec with Stability Levels
+
+  The spec would be converted from I-D XML to Markdown with a system to flag the stability level of any feature:
+
+  - **One living version**: Single version that can change at any time
+  - **Stability guarantees**: Stable features must follow strict backward and forward compatibility requirements
+  - **Hardening process**: New features must go through rigorous testing, implementation, documentation, and real-world vetting before becoming stable
+  - **Annual releases**: Releases happen once a year by promoting unstable features to stable status
+  - **Year-based naming**: Releases designated by the year they were released
+
+  **Key Benefits**:
+  - Clarifications and bug fixes can be made immediately
+  - Faster iteration on unstable features
+  - New features can be introduced without waiting for releases
+  - Users can see which features are stable vs experimental
+
+  **Trade-offs**:
+  - More difficult to track changes (requires better communication)
+  - High barrier for features to reach stability (typically 2 years)
+</Accordion>
+
+<Accordion title="Option 2 - IETF Inspired">
+  ### Core Semantics + Extensions
+
+  Reorganize into two parts:
+  
+  - **Core Semantics**: Bare minimum rules for validators, rarely changes
+  - **Standard Extensions**: Common features authored by JSON Schema Org
+  - **Extension mechanism**: Anyone can author extension specifications
+
+  Changes subject to strict compatibility requirements. Each release is a new spec that replaces and obsoletes past versions.
+
+  **Benefits**:
+  - Compatible with IETF process for future RFC consideration
+  - Clear separation of concerns
+
+  **Drawbacks**:
+  - Longer feedback loop (must wait for releases)
+  - Controversial spec restructuring would delay stable release
+  - More risky to introduce new features with compatibility requirements
+</Accordion>
+
+<Accordion title="Option 3 - Minimal Change">
+  ### Continue Current Process
+
+  Convert spec from I-D XML to Markdown but otherwise continue working as before:
+  
+  - New version releases every year
+  - Patch releases mid-cycle
+  - Each release is a distinct version
+  - No compatibility guarantees between versions
+
+  **Problem**: Doesn't solve the "draft" label confusion or provide the stability the community needs.
+</Accordion>
+
+## Decision Outcome
+
+<Note>
+The decision was to adopt **Option 1 (TC-39 Inspired)** while leaving discussion open for aspects of Option 2 that could be adopted within Option 1's constraints.
+</Note>
+
+### Why This Approach?
+
+Option 1's mutable spec allows removing unnecessary roadblocks in development processes and enables releasing a stable spec much sooner. Option 2's "Core Semantics" restructuring isn't ruled out, but evolution is expected to happen primarily through mutation guided by the stability process.
+
+### Key Advantages
+
+The biggest benefit shared between Options 1 and 2: **Both result in a stable spec** with major benefits:
+
+**For Schema Authors**:
+- Once you write a schema, you never need to change it just to keep up with JSON Schema changes
+- Clear indication of which features are stable vs experimental
+
+**For Implementers**:
+- No need to maintain separate code with different semantics for different versions
+- Code for the current release automatically supports past releases (excluding "draft" releases)
+- Reduced maintenance burden
+
+**For the Specification**:
+- Immediate clarifications and bug fixes
+- Faster iteration on experimental features
+- Better real-world feedback before committing to compatibility requirements
+
+### The Mutable Spec Advantage
+
+With a mutable spec:
+
+- **Immediate fixes**: Clarifications and bug fixes don't wait months for releases
+- **Faster feature iteration**: Agreed changes can be made available immediately for community feedback
+- **No release bottlenecks**: New features can be introduced without waiting for a full release cycle
+
+<Note>
+**Example**: Changes to dynamic references and the `propertyDependencies` keyword had been ready for over a year but users couldn't benefit until the next release. With the mutable spec, these would have been available immediately.
+</Note>
+
+### The Stability Model
+
+The stability model ensures:
+
+- **Compatibility**: No incompatible changes to stable features
+- **Safe experimentation**: New features can get real-world feedback without full compatibility commitment
+- **Informed decisions**: Users know which features are stable and how likely changes are
+
+The high barrier for stability (typically 2 years) is intentional to ensure features won't change once stable, though this means users may wait longer for features they need.
+
+## Related Links
+
+- [ADR: Decoupling from IETF](https://github.com/jdesrosiers/json-schema-spec/blob/main/adr/2022-09-decouple-from-ietf.md)
+- [Discussion: TC-39 Inspired Proposal](https://github.com/orgs/json-schema-org/discussions/234)
+- [Discussion: Vision for JSON Schema](https://github.com/orgs/json-schema-org/discussions/257)
+- [Discussion: Forward Compatibility](https://github.com/json-schema-org/community/discussions/119)
+- [Blog: Future of JSON Schema](https://json-schema.org/blog/posts/future-of-json-schema)

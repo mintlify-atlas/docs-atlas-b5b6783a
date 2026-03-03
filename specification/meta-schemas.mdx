@@ -1,0 +1,573 @@
+---
+title: 'Meta-Schemas'
+description: 'Understanding meta-schemas and vocabulary structure in JSON Schema'
+---
+
+## What are Meta-Schemas?
+
+A **meta-schema** is a JSON Schema that describes the structure and syntax of other JSON schemas. Meta-schemas serve several critical purposes:
+
+1. **Define valid schema syntax** - Specify which keywords are allowed and their value constraints
+2. **Validate schemas** - Ensure schemas conform to the specification's requirements
+3. **Declare vocabularies** - Identify which sets of keywords are available
+4. **Establish dialects** - Define specific combinations of vocabularies for different use cases
+
+<Info>
+Every JSON Schema has a meta-schema, which can be explicitly declared using the `$schema` keyword.
+</Info>
+
+## Core Meta-Schema Structure
+
+The JSON Schema v1/2026 meta-schema is located at:
+
+```
+https://json-schema.org/v1/2026
+```
+
+### Basic Structure
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "$id": "https://json-schema.org/v1/2026",
+  "$dynamicAnchor": "meta",
+  "title": "JSON Schema Core and Validation specification meta-schema",
+  "type": ["object", "boolean"]
+}
+```
+
+<Accordion title="Key Meta-Schema Properties">
+- **`$schema`**: Self-identifies the meta-schema's own dialect
+- **`$id`**: Establishes the canonical identifier
+- **`$dynamicAnchor`**: Enables dynamic reference resolution for extensibility
+- **`title`**: Human-readable description
+- **`type`**: Allows schemas to be objects or booleans
+</Accordion>
+
+## Meta-Schema Keywords
+
+The meta-schema defines constraints for all standard JSON Schema keywords:
+
+### Identifier Keywords
+
+```json
+{
+  "properties": {
+    "$id": {
+      "$ref": "#/$defs/iriReferenceString",
+      "$comment": "Fragments not allowed.",
+      "pattern": "^[^#]*$"
+    },
+    "$schema": { "$ref": "#/$defs/iriString" },
+    "$ref": { "$ref": "#/$defs/iriReferenceString" },
+    "$anchor": { "$ref": "#/$defs/anchorString" },
+    "$dynamicRef": { "$ref": "#/$defs/anchorString" },
+    "$dynamicAnchor": { "$ref": "#/$defs/anchorString" }
+  }
+}
+```
+
+### Validation Keywords
+
+<Accordion title="Type and Constant Keywords">
+```json
+{
+  "properties": {
+    "type": {
+      "anyOf": [
+        { "$ref": "#/$defs/simpleTypes" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/simpleTypes" },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      ]
+    },
+    "const": true,
+    "enum": {
+      "type": "array",
+      "items": true
+    }
+  }
+}
+```
+</Accordion>
+
+<Accordion title="Numeric Keywords">
+```json
+{
+  "properties": {
+    "multipleOf": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "maximum": { "type": "number" },
+    "exclusiveMaximum": { "type": "number" },
+    "minimum": { "type": "number" },
+    "exclusiveMinimum": { "type": "number" }
+  }
+}
+```
+</Accordion>
+
+<Accordion title="String Keywords">
+```json
+{
+  "properties": {
+    "maxLength": { "$ref": "#/$defs/nonNegativeInteger" },
+    "minLength": { "$ref": "#/$defs/nonNegativeIntegerDefault0" },
+    "pattern": {
+      "type": "string",
+      "format": "regex"
+    }
+  }
+}
+```
+</Accordion>
+
+<Accordion title="Array Keywords">
+```json
+{
+  "properties": {
+    "maxItems": { "$ref": "#/$defs/nonNegativeInteger" },
+    "minItems": { "$ref": "#/$defs/nonNegativeIntegerDefault0" },
+    "uniqueItems": {
+      "type": "boolean",
+      "default": false
+    },
+    "prefixItems": { "$ref": "#/$defs/schemaArray" },
+    "items": { "$dynamicRef": "meta" },
+    "contains": { "$dynamicRef": "meta" },
+    "maxContains": { "$ref": "#/$defs/nonNegativeInteger" },
+    "minContains": {
+      "$ref": "#/$defs/nonNegativeInteger",
+      "default": 1
+    }
+  }
+}
+```
+</Accordion>
+
+<Accordion title="Object Keywords">
+```json
+{
+  "properties": {
+    "maxProperties": { "$ref": "#/$defs/nonNegativeInteger" },
+    "minProperties": { "$ref": "#/$defs/nonNegativeIntegerDefault0" },
+    "required": { "$ref": "#/$defs/stringArray" },
+    "properties": {
+      "type": "object",
+      "additionalProperties": { "$dynamicRef": "meta" },
+      "default": {}
+    },
+    "patternProperties": {
+      "type": "object",
+      "additionalProperties": { "$dynamicRef": "meta" },
+      "propertyNames": { "format": "regex" },
+      "default": {}
+    },
+    "additionalProperties": { "$dynamicRef": "meta" },
+    "dependentRequired": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/stringArray" }
+    },
+    "dependentSchemas": {
+      "type": "object",
+      "additionalProperties": { "$dynamicRef": "meta" },
+      "default": {}
+    },
+    "propertyNames": { "$dynamicRef": "meta" }
+  }
+}
+```
+</Accordion>
+
+### Applicator Keywords
+
+```json
+{
+  "properties": {
+    "allOf": { "$ref": "#/$defs/schemaArray" },
+    "anyOf": { "$ref": "#/$defs/schemaArray" },
+    "oneOf": { "$ref": "#/$defs/schemaArray" },
+    "not": { "$dynamicRef": "meta" },
+    "if": { "$dynamicRef": "meta" },
+    "then": { "$dynamicRef": "meta" },
+    "else": { "$dynamicRef": "meta" },
+    "unevaluatedItems": { "$dynamicRef": "meta" },
+    "unevaluatedProperties": { "$dynamicRef": "meta" }
+  }
+}
+```
+
+### Metadata Keywords
+
+```json
+{
+  "properties": {
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "default": true,
+    "deprecated": {
+      "type": "boolean",
+      "default": false
+    },
+    "readOnly": {
+      "type": "boolean",
+      "default": false
+    },
+    "writeOnly": {
+      "type": "boolean",
+      "default": false
+    },
+    "examples": {
+      "type": "array",
+      "items": true
+    }
+  }
+}
+```
+
+### Content Keywords
+
+```json
+{
+  "properties": {
+    "format": { "type": "string" },
+    "contentEncoding": { "type": "string" },
+    "contentMediaType": { "type": "string" },
+    "contentSchema": { "$dynamicRef": "meta" }
+  }
+}
+```
+
+## Reusable Definitions
+
+The meta-schema defines reusable components in `$defs`:
+
+```json
+{
+  "$defs": {
+    "anchorString": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][-A-Za-z0-9._]*$"
+    },
+    "iriString": {
+      "type": "string",
+      "format": "iri"
+    },
+    "iriReferenceString": {
+      "type": "string",
+      "format": "iri-reference"
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "nonNegativeIntegerDefault0": {
+      "$ref": "#/$defs/nonNegativeInteger",
+      "default": 0
+    },
+    "schemaArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$dynamicRef": "meta" }
+    },
+    "simpleTypes": {
+      "enum": [
+        "array",
+        "boolean",
+        "integer",
+        "null",
+        "number",
+        "object",
+        "string"
+      ]
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "default": []
+    }
+  }
+}
+```
+
+## Extension Mechanism
+
+The meta-schema includes patterns for allowing extensions:
+
+### Custom Extension Keywords
+
+```json
+{
+  "patternProperties": {
+    "^x-": true
+  }
+}
+```
+
+Keywords beginning with `x-` are automatically treated as annotations.
+
+### Property Name Restrictions
+
+```json
+{
+  "propertyNames": {
+    "pattern": "^[^$]|^\\$(id|schema|ref|anchor|dynamicRef|dynamicAnchor|comment|defs)$"
+  }
+}
+```
+
+This pattern ensures:
+- Non-core keywords cannot start with `$`
+- Only recognized `$` keywords are allowed
+
+### Dynamic Extension Point
+
+```json
+{
+  "$dynamicRef": "extension",
+  "unevaluatedProperties": false,
+  "$defs": {
+    "extension": {
+      "$dynamicAnchor": "extension"
+    }
+  }
+}
+```
+
+This allows extending the meta-schema while maintaining validation.
+
+## Vocabulary-Based Meta-Schema
+
+The draft-next specification uses a vocabulary-based approach:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/next/schema",
+  "$id": "https://json-schema.org/draft/next/schema",
+  "$vocabulary": {
+    "https://json-schema.org/draft/next/vocab/core": true,
+    "https://json-schema.org/draft/next/vocab/applicator": true,
+    "https://json-schema.org/draft/next/vocab/unevaluated": true,
+    "https://json-schema.org/draft/next/vocab/validation": true,
+    "https://json-schema.org/draft/next/vocab/meta-data": true,
+    "https://json-schema.org/draft/next/vocab/format-annotation": true,
+    "https://json-schema.org/draft/next/vocab/content": true
+  },
+  "allOf": [
+    {"$ref": "meta/core"},
+    {"$ref": "meta/applicator"},
+    {"$ref": "meta/unevaluated"},
+    {"$ref": "meta/validation"},
+    {"$ref": "meta/meta-data"},
+    {"$ref": "meta/format-annotation"},
+    {"$ref": "meta/content"}
+  ]
+}
+```
+
+### Vocabulary Breakdown
+
+<Accordion title="Core Vocabulary">
+**IRI**: `https://json-schema.org/draft/next/vocab/core`
+
+**Keywords**:
+- `$schema`, `$id`, `$ref`, `$anchor`
+- `$dynamicRef`, `$dynamicAnchor`
+- `$defs`, `$comment`
+
+**Purpose**: Essential keywords for schema structure and referencing.
+</Accordion>
+
+<Accordion title="Applicator Vocabulary">
+**IRI**: `https://json-schema.org/draft/next/vocab/applicator`
+
+**Keywords**:
+- `prefixItems`, `items`, `contains`
+- `properties`, `patternProperties`, `additionalProperties`
+- `propertyNames`, `dependentSchemas`
+- `allOf`, `anyOf`, `oneOf`, `not`
+- `if`, `then`, `else`
+
+**Purpose**: Keywords that apply subschemas to instance locations.
+</Accordion>
+
+<Accordion title="Unevaluated Vocabulary">
+**IRI**: `https://json-schema.org/draft/next/vocab/unevaluated`
+
+**Keywords**:
+- `unevaluatedItems`
+- `unevaluatedProperties`
+
+**Purpose**: Keywords that apply to locations not evaluated by other keywords.
+</Accordion>
+
+<Accordion title="Validation Vocabulary">
+**IRI**: `https://json-schema.org/draft/next/vocab/validation`
+
+**Keywords**:
+- Type: `type`, `enum`, `const`
+- Numeric: `multipleOf`, `maximum`, `exclusiveMaximum`, `minimum`, `exclusiveMinimum`
+- String: `maxLength`, `minLength`, `pattern`
+- Array: `maxItems`, `minItems`, `uniqueItems`, `maxContains`, `minContains`
+- Object: `maxProperties`, `minProperties`, `required`, `dependentRequired`
+
+**Purpose**: Assertion keywords for validating instance structure.
+</Accordion>
+
+<Accordion title="Meta-Data Vocabulary">
+**IRI**: `https://json-schema.org/draft/next/vocab/meta-data`
+
+**Keywords**:
+- `title`, `description`
+- `default`, `deprecated`
+- `readOnly`, `writeOnly`
+- `examples`
+
+**Purpose**: Annotation keywords for documentation and tooling.
+</Accordion>
+
+<Accordion title="Format Annotation Vocabulary">
+**IRI**: `https://json-schema.org/draft/next/vocab/format-annotation`
+
+**Keywords**:
+- `format`
+
+**Purpose**: Semantic validation of string formats.
+</Accordion>
+
+<Accordion title="Content Vocabulary">
+**IRI**: `https://json-schema.org/draft/next/vocab/content`
+
+**Keywords**:
+- `contentEncoding`
+- `contentMediaType`
+- `contentSchema`
+
+**Purpose**: Describing string-encoded content.
+</Accordion>
+
+## Deprecated Keywords
+
+The meta-schema maintains backward compatibility by including deprecated keywords:
+
+```json
+{
+  "properties": {
+    "definitions": {
+      "$comment": "\"definitions\" has been replaced by \"$defs\".",
+      "type": "object",
+      "additionalProperties": { "$dynamicRef": "meta" },
+      "deprecated": true,
+      "default": {}
+    },
+    "dependencies": {
+      "$comment": "\"dependencies\" has been split and replaced by \"dependentSchemas\" and \"dependentRequired\".",
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          { "$dynamicRef": "meta" },
+          { "$ref": "meta/validation#/$defs/stringArray" }
+        ]
+      },
+      "deprecated": true,
+      "default": {}
+    },
+    "$recursiveAnchor": {
+      "$comment": "\"$recursiveAnchor\" has been replaced by \"$dynamicAnchor\".",
+      "type": "boolean",
+      "deprecated": true
+    },
+    "$recursiveRef": {
+      "$comment": "\"$recursiveRef\" has been replaced by \"$dynamicRef\".",
+      "type": "string",
+      "format": "uri-reference",
+      "deprecated": true
+    }
+  }
+}
+```
+
+## Publication URLs
+
+Meta-schemas are published at official URLs:
+
+### Current Version (v1/2026)
+
+- **Canonical**: `https://json-schema.org/v1/2026`
+- **Version alias**: `https://json-schema.org/v1` (latest within v1)
+
+### Draft Versions
+
+- **Draft-next**: `https://json-schema.org/draft/next/schema`
+
+<Info>
+Implementations SHOULD include a bundled copy of the meta-schema rather than fetching it from the network.
+</Info>
+
+## Using Meta-Schemas
+
+### Validating a Schema
+
+To validate that a schema is well-formed:
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" }
+  }
+}
+```
+
+This schema should validate successfully against the v1/2026 meta-schema.
+
+### Creating Custom Meta-Schemas
+
+You can extend the standard meta-schema for custom dialects:
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "$id": "https://example.com/meta/custom",
+  "allOf": [
+    { "$ref": "https://json-schema.org/v1/2026" }
+  ],
+  "properties": {
+    "x-custom-keyword": {
+      "type": "string",
+      "description": "Custom extension keyword"
+    }
+  }
+}
+```
+
+### Dialect Determination
+
+Implementations determine the dialect using:
+
+1. **`$schema` keyword** (highest priority)
+2. **Parent schema dialect** (for embedded resources)
+3. **External context** (media type parameters, embedding specifications)
+4. **User configuration**
+
+<Note>
+If the dialect cannot be determined, implementations MUST refuse to process the schema.
+</Note>
+
+## Best Practices
+
+1. **Always declare `$schema`** in root schemas to ensure correct interpretation
+2. **Validate your schemas** against their meta-schema before publishing
+3. **Use vocabulary-based meta-schemas** for modular dialect design
+4. **Bundle meta-schemas** in your implementation rather than fetching from URLs
+5. **Document custom extensions** clearly when creating custom meta-schemas
+
+<Info>
+For more information about meta-schemas and vocabularies, visit [json-schema.org](https://json-schema.org/)
+</Info>

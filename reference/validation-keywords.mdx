@@ -1,0 +1,528 @@
+---
+title: Validation Keywords
+description: Keywords that constrain and validate instance values
+---
+
+Validation keywords assert constraints on instance values. These keywords produce boolean results and do not generate annotations.
+
+## Type Validation
+
+<Accordion title="type">
+
+**Type:** String or Array of strings
+
+**Purpose:** Constrains the instance to one or more JSON data types.
+
+The `type` keyword restricts an instance to specific JSON primitive types. It's one of the most commonly used validation keywords.
+
+**Valid type values:**
+- `"null"` - JSON null
+- `"boolean"` - true or false
+- `"object"` - JSON object
+- `"array"` - JSON array
+- `"number"` - any numeric value
+- `"string"` - string value
+- `"integer"` - number with zero fractional part
+
+**Validation:**
+- If a string, instance validates if its type matches the specified type
+- If an array, array MUST be non-empty with unique string elements
+- If an array, instance validates if its type matches any type in the array
+
+**Example:**
+```json
+{
+  "type": "string"
+}
+```
+
+```json
+{
+  "type": ["string", "null"]
+}
+```
+
+</Accordion>
+
+<Accordion title="enum">
+
+**Type:** Array (any types)
+
+**Purpose:** Constrains the instance to a fixed set of allowed values.
+
+The `enum` keyword restricts an instance to one of a predefined list of values using equality comparison.
+
+**Validation:**
+- Value MUST be an array
+- Array SHOULD have at least one element
+- Elements SHOULD be unique
+- Instance validates if it equals one of the array elements
+- Elements may be of any type, including null
+
+**Example:**
+```json
+{
+  "enum": ["red", "green", "blue"]
+}
+```
+
+```json
+{
+  "type": "string",
+  "enum": ["active", "inactive", "pending", null]
+}
+```
+
+</Accordion>
+
+<Accordion title="const">
+
+**Type:** Any JSON value
+
+**Purpose:** Constrains the instance to a single specific value.
+
+The `const` keyword is functionally equivalent to `enum` with a single value, but more clearly expresses the intent.
+
+**Validation:**
+- Value MAY be of any type, including null
+- Instance validates if it equals the keyword's value
+
+**Example:**
+```json
+{
+  "properties": {
+    "type": { "const": "user" },
+    "version": { "const": 1 }
+  }
+}
+```
+
+</Accordion>
+
+## Numeric Validation
+
+These keywords apply only to numeric instances (number and integer types).
+
+<Accordion title="multipleOf">
+
+**Type:** Number (strictly greater than 0)
+
+**Purpose:** Constrains a numeric instance to be a multiple of the given value.
+
+**Validation:**
+- Value MUST be a number strictly greater than 0
+- A numeric instance is valid if division by this value results in an integer
+- Non-numeric instances are valid (keyword is ignored)
+
+**Example:**
+```json
+{
+  "type": "number",
+  "multipleOf": 0.5
+}
+```
+
+```json
+{
+  "type": "integer",
+  "multipleOf": 10
+}
+```
+
+</Accordion>
+
+<Accordion title="maximum">
+
+**Type:** Number
+
+**Purpose:** Constrains a numeric instance to be less than or equal to a maximum value (inclusive upper bound).
+
+**Validation:**
+- Value MUST be a number
+- If the instance is a number, it validates if it is less than or exactly equal to `maximum`
+- Non-numeric instances are valid
+
+**Example:**
+```json
+{
+  "type": "number",
+  "maximum": 100
+}
+```
+
+</Accordion>
+
+<Accordion title="exclusiveMaximum">
+
+**Type:** Number
+
+**Purpose:** Constrains a numeric instance to be strictly less than a maximum value (exclusive upper bound).
+
+**Validation:**
+- Value MUST be a number
+- If the instance is a number, it validates if it is strictly less than `exclusiveMaximum`
+- Non-numeric instances are valid
+
+**Example:**
+```json
+{
+  "type": "number",
+  "exclusiveMaximum": 100
+}
+```
+
+</Accordion>
+
+<Accordion title="minimum">
+
+**Type:** Number
+
+**Purpose:** Constrains a numeric instance to be greater than or equal to a minimum value (inclusive lower bound).
+
+**Validation:**
+- Value MUST be a number
+- If the instance is a number, it validates if it is greater than or exactly equal to `minimum`
+- Non-numeric instances are valid
+
+**Example:**
+```json
+{
+  "type": "integer",
+  "minimum": 0
+}
+```
+
+</Accordion>
+
+<Accordion title="exclusiveMinimum">
+
+**Type:** Number
+
+**Purpose:** Constrains a numeric instance to be strictly greater than a minimum value (exclusive lower bound).
+
+**Validation:**
+- Value MUST be a number
+- If the instance is a number, it validates if it is strictly greater than `exclusiveMinimum`
+- Non-numeric instances are valid
+
+**Example:**
+```json
+{
+  "type": "number",
+  "exclusiveMinimum": 0
+}
+```
+
+</Accordion>
+
+## String Validation
+
+These keywords apply only to string instances.
+
+<Accordion title="maxLength">
+
+**Type:** Non-negative integer
+
+**Purpose:** Constrains the maximum length of a string.
+
+**Validation:**
+- Value MUST be a non-negative integer
+- A string validates if its length is less than or equal to this value
+- Length is defined as the number of Unicode code points
+- Non-string instances are valid
+
+**Example:**
+```json
+{
+  "type": "string",
+  "maxLength": 100
+}
+```
+
+</Accordion>
+
+<Accordion title="minLength">
+
+**Type:** Non-negative integer
+
+**Purpose:** Constrains the minimum length of a string.
+
+**Validation:**
+- Value MUST be a non-negative integer
+- A string validates if its length is greater than or equal to this value
+- Length is defined as the number of Unicode code points
+- Omitting this keyword has the same behavior as a value of 0
+- Non-string instances are valid
+
+**Example:**
+```json
+{
+  "type": "string",
+  "minLength": 1
+}
+```
+
+</Accordion>
+
+<Accordion title="pattern">
+
+**Type:** String (regular expression)
+
+**Purpose:** Constrains a string to match a regular expression pattern.
+
+**Validation:**
+- Value MUST be a string
+- String SHOULD be a valid ECMA-262 regular expression
+- A string validates if the regex matches the instance successfully
+- Regular expressions are NOT implicitly anchored
+- Non-string instances are valid
+
+**Example:**
+```json
+{
+  "type": "string",
+  "pattern": "^[A-Z][a-z]+$"
+}
+```
+
+```json
+{
+  "type": "string",
+  "pattern": "^\\d{3}-\\d{2}-\\d{4}$",
+  "description": "SSN format: XXX-XX-XXXX"
+}
+```
+
+</Accordion>
+
+## Array Validation
+
+These keywords apply only to array instances.
+
+<Accordion title="maxItems">
+
+**Type:** Non-negative integer
+
+**Purpose:** Constrains the maximum number of items in an array.
+
+**Validation:**
+- Value MUST be a non-negative integer
+- An array validates if its size is less than or equal to this value
+- Non-array instances are valid
+
+**Example:**
+```json
+{
+  "type": "array",
+  "maxItems": 10
+}
+```
+
+</Accordion>
+
+<Accordion title="minItems">
+
+**Type:** Non-negative integer
+
+**Purpose:** Constrains the minimum number of items in an array.
+
+**Validation:**
+- Value MUST be a non-negative integer
+- An array validates if its size is greater than or equal to this value
+- Omitting this keyword has the same behavior as a value of 0
+- Non-array instances are valid
+
+**Example:**
+```json
+{
+  "type": "array",
+  "minItems": 1
+}
+```
+
+</Accordion>
+
+<Accordion title="uniqueItems">
+
+**Type:** Boolean
+
+**Purpose:** Constrains array items to be unique.
+
+**Validation:**
+- Value MUST be a boolean
+- If `false`, the instance validates successfully
+- If `true`, validates successfully only if all array elements are unique
+- Elements are equal if they are the same type and value per the data model
+- Omitting this keyword has the same behavior as `false`
+- Non-array instances are valid
+
+**Example:**
+```json
+{
+  "type": "array",
+  "uniqueItems": true
+}
+```
+
+</Accordion>
+
+<Accordion title="maxContains">
+
+**Type:** Non-negative integer
+
+**Purpose:** Sets the maximum number of array items that can match the `contains` schema.
+
+**Validation:**
+- Value MUST be a non-negative integer
+- Modifies the behavior of the `contains` keyword in the same schema object
+- Produces no assertion result on its own
+- Used with `contains` to create an upper bound
+
+**Annotation:**
+- The value itself is the annotation result
+
+**Example:**
+```json
+{
+  "type": "array",
+  "contains": { "type": "number" },
+  "minContains": 1,
+  "maxContains": 5
+}
+```
+
+</Accordion>
+
+<Accordion title="minContains">
+
+**Type:** Non-negative integer
+
+**Purpose:** Sets the minimum number of array items that must match the `contains` schema.
+
+**Validation:**
+- Value MUST be a non-negative integer
+- Modifies the behavior of the `contains` keyword in the same schema object
+- If absent, `contains` assumes a minimum of 1
+- Produces no assertion result on its own
+
+**Annotation:**
+- The value itself is the annotation result
+
+**Example:**
+```json
+{
+  "type": "array",
+  "contains": {
+    "type": "object",
+    "required": ["admin"]
+  },
+  "minContains": 1
+}
+```
+
+</Accordion>
+
+## Object Validation
+
+These keywords apply only to object instances.
+
+<Accordion title="maxProperties">
+
+**Type:** Non-negative integer
+
+**Purpose:** Constrains the maximum number of properties in an object.
+
+**Validation:**
+- Value MUST be a non-negative integer
+- An object validates if its property count is less than or equal to this value
+- Non-object instances are valid
+
+**Example:**
+```json
+{
+  "type": "object",
+  "maxProperties": 10
+}
+```
+
+</Accordion>
+
+<Accordion title="minProperties">
+
+**Type:** Non-negative integer
+
+**Purpose:** Constrains the minimum number of properties in an object.
+
+**Validation:**
+- Value MUST be a non-negative integer
+- An object validates if its property count is greater than or equal to this value
+- Omitting this keyword has the same behavior as a value of 0
+- Non-object instances are valid
+
+**Example:**
+```json
+{
+  "type": "object",
+  "minProperties": 1
+}
+```
+
+</Accordion>
+
+<Accordion title="required">
+
+**Type:** Array of strings
+
+**Purpose:** Specifies which properties must be present in an object.
+
+**Validation:**
+- Value MUST be an array
+- Array elements MUST be strings and SHOULD be unique
+- An object validates if every string in the array is a property name in the instance
+- Omitting this keyword has the same behavior as an empty array
+- Non-object instances are valid
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "email": { "type": "string" },
+    "age": { "type": "integer" }
+  },
+  "required": ["name", "email"]
+}
+```
+
+</Accordion>
+
+<Accordion title="dependentRequired">
+
+**Type:** Object (values are arrays of strings)
+
+**Purpose:** Specifies properties that are required when another specific property is present.
+
+**Validation:**
+- Value MUST be an object
+- Property values MUST be arrays of strings with unique elements
+- For each property name appearing in both the instance and this keyword, every string in the corresponding array must also be a property in the instance
+- Omitting this keyword has the same behavior as an empty object
+- Non-object instances are valid
+
+**Example:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "creditCard": { "type": "string" },
+    "billingAddress": { "type": "string" },
+    "cvv": { "type": "string" }
+  },
+  "dependentRequired": {
+    "creditCard": ["billingAddress", "cvv"]
+  }
+}
+```
+
+</Accordion>
