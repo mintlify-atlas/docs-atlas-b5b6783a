@@ -75,7 +75,12 @@
             "pages": [
               "reference/adr/overview",
               "reference/adr/stable-spec",
-              "reference/adr/assertion-format"
+              "reference/adr/assertion-format",
+              "reference/adr/decouple-ietf",
+              "reference/adr/sva-prefix",
+              "reference/adr/extract-unstable",
+              "reference/adr/object-contains",
+              "reference/adr/additionalproperties-ambiguity"
             ]
           }
         ]

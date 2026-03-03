@@ -1,0 +1,110 @@
+---
+title: "Decoupling from IETF (2022-09)"
+description: "Decision to decouple JSON Schema from IETF standards process"
+---
+
+## Status
+
+**Accepted** - September 27, 2022
+
+## Deciders
+
+@jdesrosiers, @relequestual, @awwright, @handrews, @gregsdennis
+
+## Context and Problem Statement
+
+Currently JSON Schema loosely follows the IETF Internet-Draft (I-D) process for spec development and releases but isn't associated with any IETF working group. JSON Schema is an individual draft. That means it isn't on a standards track with IETF and IETF is not involved nor supports the spec in any way other than hosting the canonical version of our I-Ds.
+
+Our perceived involvement with IETF causes confusion and misunderstanding within our community in the cases where our practices and the realities of our situation deviate from a typical IETF I-D lifecycle. The thing that makes our situation different than a typical I-D is that our "drafts" are intended for use in production.
+
+<Info>
+This ADR represents a major turning point in JSON Schema's development process, moving from the IETF model to a more flexible, community-driven approach.
+</Info>
+
+## Decision Drivers
+
+<Accordion title="IETF versioning doesn't fit JSON Schema">
+IETF's draft versioning system doesn't work for JSON Schema and we stopped using it to version our releases a while ago. We now use date-based versioning and even have more than one draft submission per release (the initial release and the patch release).
+</Accordion>
+
+<Accordion title="IETF process is optimized for completion, not evolution">
+The IETF process is optimized for working on a draft until it's done and then disbanding. In some cases, the RFC may be revisited and revised in the future, but this is rare and generally contains little more than clarifications and reference updates.
+
+JSON Schema is not like that. **JSON Schema is more like a programming language**. When it stops evolving, it will lose its relevance. When we finish a release of JSON Schema, we don't disband, we start work on the next release.
+</Accordion>
+
+<Accordion title="Production use vs. draft status">
+Since the project resumed activity after the gap following draft-04, every one of our releases is expected to be used in production and will be depended on for many years forward. This is not consistent with normal IETF drafts.
+
+Under IETF, JSON Schema fits under the category of "draft". The community has repeatedly told us that they perceive this to mean that JSON Schema is "incomplete" and "not ready for production use". This is the wrong message for us to be sending as all of our releases are intended to be used in production.
+</Accordion>
+
+<Accordion title="Limited IETF engagement with JSON Schema">
+Several members of the JSON Schema team have interacted with JSON-related IETF working groups. Some of these interactions demonstrated an indifference or hostility to JSON Schema, and a preference for projects taking a different approach.
+
+We were informed that any schema project for JSON would not necessarily start from JSON Schema as a base, indicating that a "JSON Schema" working group would quite likely not involve JSON Schema itself.
+</Accordion>
+
+## Considered Options
+
+1. **Continue with I-Ds** - Continue to submit I-Ds, while using our customized process with no intention of pursuing standards track RFC status
+2. **Go all-in with IETF** - Pursue a standards track RFC with the IETF describing essential characteristics of evaluating a JSON Schema
+3. **Join W3C** - Pursue a standards track with W3C using their process
+4. **Decouple completely** - Come up with our own specification development lifecycle (SDLC) model inspired by well-established projects
+
+## Decision Outcome
+
+**Chosen option: Decouple completely from standards organizations** that don't fit our needs.
+
+We don't currently have a plan for what to replace IETF with, but we are currently investigating how other established projects do their SDLC and will likely choose one to emulate and adapt to our needs. Although we don't have a replacement solution in place yet, we are confident that continuing to abuse the IETF I-D process or conforming to a standards organization process that doesn't fit our needs is not the way to go.
+
+<Note>
+We still plan to use the IETF process to register the media types defined by JSON Schema with IANA. This effort is currently in progress with the HTTPAPIs working group.
+</Note>
+
+### Why Other Options Were Rejected
+
+<Accordion title="Option 1: Continue with I-Ds - Rejected">
+This option was rejected because it ignores the problems we've been facing and provides no solution. No one wants this.
+</Accordion>
+
+<Accordion title="Option 2: Go all-in with IETF - Rejected">
+If we go all in with IETF, we would have to join a working group and treat JSON Schema like a normal I-D. That means:
+
+- We would have to start treating drafts as drafts, which means not recommending production use until we are ready for RFC
+- Not releasing a new production-ready version of JSON Schema until we've reached RFC status
+- Most of the core contributors don't believe that we are close enough to an RFC-ready release that we want to commit to not being able to issue another release until that happens
+
+There are other concerns including skepticism that even with an extension mechanism the RFC wouldn't need regular updates, which is not normal practice for an RFC and would require significant effort to issue a replacing RFC.
+
+Additionally, many of the core contributors have found working with the IETF unproductive and have concerns about JSON Schema getting deeper involved without compelling enough reason.
+</Accordion>
+
+<Accordion title="Option 3: Join W3C - Rejected">
+This option has the same problems as Option 2 except that we don't have the same unpleasant history with W3C than we do with IETF.
+
+Additionally, the W3C is a "pay to play" standards organization. Organizations must pay to contribute to specifications the W3C publish, which doesn't match the JSON Schema Org's open ethos.
+
+The W3C does have an "invited expert" solution for when a person's employer doesn't want to be a paying member, however this is supposed to be an exception to the rule, and not frequently used.
+</Accordion>
+
+## Consequences
+
+### Positive Consequences
+
+- ✅ Allows us to distance ourselves from the assumptions that people make about JSON Schema because they assume it works like a typical I-D
+- ✅ Allows us to customize our SDLC model to what works best for JSON Schema
+- ✅ Enables the stability-focused development process adopted in the [November 2022 Stable Spec ADR](/reference/adr/stable-spec)
+
+### Negative Consequences
+
+- ❌ We lose access to IETF/W3C expert review processes
+- ❌ Not being associated with a recognized standards organization reduces credibility in the eyes of some (however, our membership with OpenJS/Linux Foundation provides the credibility that we need)
+- ❌ One of the benefits of an RFC is other standards can normatively reference it (however, feedback indicates that OpenAPI's self-published specification is comfortably referenced in standards, and JSON Schema is a member of the OpenJS Foundation under the Linux Foundation)
+- ❌ Defining our own SDLC process will be a lot of work and none of us have expertise in defining such a process (however, we can take inspiration from existing well-established projects)
+
+## Related Links
+
+- [Discussion: Dropping the "draft" prefix](https://github.com/orgs/json-schema-org/discussions/69)
+- [Follow-up ADR: Stable Specification (2022-11)](/reference/adr/stable-spec)
+- [OpenJS Foundation](https://openjsf.org/)

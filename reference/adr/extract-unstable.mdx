@@ -1,0 +1,173 @@
+---
+title: "Extract Unstable Keywords (2024-05)"
+description: "Removing unstable features before the stable v1 release"
+---
+
+## Status
+
+**Accepted** - May 8, 2024
+
+## Deciders
+
+@gregsdennis, @jdesrosiers, @bhutton
+
+## Context and Problem Statement
+
+In creating a stable spec release, it's important that all included features are well-developed and their behaviors are finalized.
+
+<Warning>
+We can't publish a stable spec that contains unstable features. Thus we need to remove them.
+</Warning>
+
+The following features were identified as not yet ready for the stable v1 release:
+
+- **`$vocabulary`** - This feature is still in development
+- **Output formats** - This feature is being extracted to its own spec anyway
+- **`propertyDependencies`** - This feature is not technically in the spec and should go through the proposal process
+
+## Decision Drivers
+
+We can't publish a stable spec that contains unstable features. We need to remove them while continuing their development separately.
+
+## Considered Options
+
+1. **Extract unfinished features** and put them through the proposal process
+2. **Complete the features** before releasing the spec
+
+## Decision Outcome
+
+**Chosen option: Extract unfinished features and put them through the proposal process**
+
+This allows us to release a stable version of the specification while continuing to develop these features.
+
+## Features Extracted
+
+### 1. `$vocabulary` Keyword
+
+<Accordion title="What is $vocabulary?">
+The `$vocabulary` keyword declares which vocabularies (sets of keywords) are used in a meta-schema and whether they are required or optional.
+
+**Status**: Moved to proposal/experimentation phase
+
+**Example**:
+```json
+{
+  "$schema": "https://json-schema.org/draft/next/schema",
+  "$id": "https://example.com/my-meta-schema",
+  "$vocabulary": {
+    "https://json-schema.org/draft/next/vocab/core": true,
+    "https://json-schema.org/draft/next/vocab/applicator": true,
+    "https://example.com/vocab/custom": false
+  }
+}
+```
+</Accordion>
+
+### 2. Output Formats
+
+<Accordion title="What are output formats?">
+Output formats define standardized structures for representing validation results, including:
+
+- **Flag format**: Simple boolean pass/fail
+- **Basic format**: Errors only
+- **Detailed format**: Full evaluation paths and annotations
+- **Verbose format**: Complete evaluation tree
+
+**Status**: Being extracted to its own specification document
+
+**Reason**: Output formats deserve their own specification for proper development and community feedback.
+</Accordion>
+
+### 3. `propertyDependencies` Keyword
+
+<Accordion title="What is propertyDependencies?">
+The `propertyDependencies` keyword would allow conditional schemas based on property values (not just property presence like `dependentSchemas`).
+
+**Example concept**:
+```json
+{
+  "type": "object",
+  "properties": {
+    "country": { "type": "string" },
+    "postalCode": { "type": "string" }
+  },
+  "propertyDependencies": {
+    "country": {
+      "US": {
+        "properties": {
+          "postalCode": { "pattern": "^[0-9]{5}$" }
+        }
+      },
+      "UK": {
+        "properties": {
+          "postalCode": { "pattern": "^[A-Z]{1,2}[0-9]{1,2} [0-9][A-Z]{2}$" }
+        }
+      }
+    }
+  }
+}
+```
+
+**Status**: Needs to go through the formal proposal process
+
+**Reason**: This feature was discussed but never formally added to the specification.
+</Accordion>
+
+## Consequences
+
+### Positive Consequences
+
+- ✅ We can release a spec earlier that fulfills our users' needs
+- ✅ We can continue to develop these features separately
+- ✅ Each feature gets proper attention through the proposal process
+- ✅ The stable v1 release contains only well-tested, finalized features
+- ✅ Maintains stability guarantees for the core specification
+
+### Negative Consequences
+
+- ⚠️ These features will be considered experimental until their proposals are accepted
+- ⚠️ May be a hindrance to adoption for users who need these features
+- ⚠️ Users who were using `$vocabulary` in draft versions must wait for it to be re-added
+
+## Timeline and Process
+
+<Steps>
+  <Step title="Extract features">
+    Remove `$vocabulary`, output formats, and `propertyDependencies` from the main specification.
+  </Step>
+  
+  <Step title="Create proposals">
+    Each feature goes through the [formal proposal process](/process/proposals):
+    - Concept discussion
+    - Formal proposal document
+    - Prototype implementations
+  </Step>
+  
+  <Step title="Experimentation">
+    Features enter the [experimentation phase](/process/lifecycle) where implementations can test them:
+    - Gather feedback from implementers
+    - Refine based on real-world usage
+    - Require 5+ implementations before advancing
+  </Step>
+  
+  <Step title="Stabilization">
+    Once mature and tested:
+    - Features can be added to a future stable release
+    - No breaking changes between extraction and re-addition
+  </Step>
+</Steps>
+
+## Current Status of Extracted Features
+
+| Feature | Status | Proposal | Notes |
+|---------|--------|----------|-------|
+| `$vocabulary` | In development | [Vocabularies proposal](https://github.com/json-schema-org/json-schema-spec/blob/main/specs/proposals/vocabularies.md) | Working toward re-inclusion |
+| Output formats | Separate spec | In progress | Being developed as standalone specification |
+| `propertyDependencies` | Proposed | [Property dependencies proposal](https://github.com/json-schema-org/json-schema-spec/blob/main/specs/proposals/propertyDependencies.md) | Awaiting implementations |
+
+## Related Links
+
+- [Issue #1443: Unstable features discussion](https://github.com/json-schema-org/json-schema-spec/issues/1443)
+- [SDLC Proposal Discussion](https://github.com/orgs/json-schema-org/discussions/671)
+- [Vocabularies Proposal](/process/proposals)
+- [Feature Lifecycle](/process/lifecycle)

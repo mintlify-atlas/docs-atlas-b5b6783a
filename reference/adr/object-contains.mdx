@@ -1,0 +1,177 @@
+---
+title: "Contains and Objects (2024-02)"
+description: "Decision to keep contains for arrays only and revert object support"
+---
+
+## Status
+
+**Proposed, accepted, reconsidered, and ultimately reverted**
+
+## Deciders
+
+@gregsdennis, @jdesrosiers, @handrews, @awwright, @karenetheridge, @relequestual (with input from non-core members)
+
+## Date
+
+November 14, 2023 (documented February 9, 2024)
+
+## Context and Problem Statement
+
+The `contains` keyword originally applied only to arrays. The question arose: **Should `contains` also apply to objects?**
+
+<Info>
+This ADR documents a decision that was made, reconsidered, and ultimately reverted - an important example of how stability concerns influenced the specification development process.
+</Info>
+
+### Timeline
+
+**[2021-02]** - The original proposal was for `contains` to apply to objects as well as arrays since there was no functionality to do so. The discussion covered:
+- Modifying `contains` to work with objects
+- Introducing a new `objectContains` (or similar) keyword set
+
+The decision was voted on and **modifying `contains` won**.
+
+**[2021-06]** - A change was applied to allow `contains` for objects.
+
+**[2022-12]** - With the team shifting focus to stability between spec releases, the question was raised again with the argument that allowing `contains` to apply to objects is a **breaking change**. It was conceded that the better approach would be to retain `contains` only for arrays and introduce a new keyword set to apply to objects.
+
+**[2023-11]** - The change was applied (reverted to previous behavior).
+
+## Decision Drivers
+
+- The original decision to allow `contains` to apply to objects was driven by the fact that no such functionality existed
+- The decision to revert was driven by a desire to **not break current usages of `contains`**
+- Stability guarantees became a higher priority than feature addition
+
+## Considered Options
+
+1. **Modify `contains`** to apply to objects
+2. **Introduce new keyword set** (e.g., `objectContains` along with associated min/max)
+
+## Decision Outcome
+
+**Ultimately, `contains` will continue to apply to only arrays.**
+
+New keywords will need to be introduced to apply to objects. (Such a proposal has not yet been made.)
+
+## Use Case Example
+
+A user in [Slack](https://json-schema.slack.com/archives/C5CF75URH/p1707258032879409) provided this real-world requirement:
+
+**Requirement**: An object may contain any number of properties, but one and only one of them must contain an object with a `title` property.
+
+### Valid Instance
+
+```json
+{
+  "foo": { "title": "a title" },
+  "bar": { "baz": 42 }
+}
+```
+
+### Invalid Instances
+
+```json
+// Missing title
+{
+  "foo": { "quux": false },
+  "bar": { "baz": 42 }
+}
+```
+
+```json
+// Too many titles
+{
+  "foo": { "title": "a title" },
+  "bar": { "title": "a title" }
+}
+```
+
+## Analysis of Options
+
+### Option 1: Change `contains` to Work with Objects
+
+If `contains` worked with objects, the schema would be:
+
+```json
+{
+  "type": "object",
+  "contains": {
+    "type": "object",
+    "required": ["title"]
+  },
+  "minContains": 1,
+  "maxContains": 1
+}
+```
+
+**Pros:**
+- ✅ Provides functionality that previously did not exist
+- ✅ Reuses existing keyword rather than adding new ones
+
+**Cons:**
+- ❌ **Breaking change**: Can potentially break existing schemas
+- ❌ Schemas using `contains` without a `type: array` specifier would suddenly start applying to objects also
+- ❌ Violates stability guarantees
+
+### Option 2: Introduce New Keywords (Chosen)
+
+Introduce new keywords: `objectContains`, `objectMinContains`, `objectMaxContains`
+
+The schema would look like:
+
+```json
+{
+  "type": "object",
+  "objectContains": {
+    "type": "object",
+    "required": ["title"]
+  },
+  "objectMinContains": 1,
+  "objectMaxContains": 1
+}
+```
+
+**Pros:**
+- ✅ Provides functionality that previously did not exist
+- ✅ **Doesn't break anyone** - maintains backward compatibility
+- ✅ Aligns with stability-first development approach
+
+**Cons:**
+- ⚠️ Requires introducing three new keywords
+- ⚠️ More keywords to learn and document
+
+## Consequences
+
+### Positive Consequences
+
+- ✅ Schemas which currently use `contains` without a `type: array` specifier will not suddenly start applying to objects
+- ✅ Maintains backward compatibility
+- ✅ Upholds stability guarantees established in the [Stable Spec ADR](/reference/adr/stable-spec)
+- ✅ Demonstrates commitment to not breaking existing schemas
+
+### Negative Consequences
+
+- ❌ The functionality of `contains` as applied to objects is still unsupported
+- ⚠️ Users who need this functionality must wait for new keywords to be proposed and accepted
+- ⚠️ If new keywords are added, there will be some asymmetry between array and object approaches
+
+## Current Status
+
+As of the v1/2026 release:
+
+- ✅ `contains`, `minContains`, and `maxContains` work **only with arrays**
+- ⏳ No `objectContains` equivalent has been proposed yet
+- 💡 Community members are encouraged to submit a proposal if they need this functionality
+
+<Note>
+This ADR demonstrates the specification's commitment to stability over feature addition, even when reverting previously accepted changes.
+</Note>
+
+## Related Links
+
+- [Original proposal #1077](https://github.com/json-schema-org/json-schema-spec/issues/1077)
+- [Implementation PR #1092](https://github.com/json-schema-org/json-schema-spec/pull/1092)
+- [Reversion discussion #1358](https://github.com/json-schema-org/json-schema-spec/issues/1358)
+- [Reversion PR #1452](https://github.com/json-schema-org/json-schema-spec/pull/1452)
+- [Stable Specification ADR](/reference/adr/stable-spec)

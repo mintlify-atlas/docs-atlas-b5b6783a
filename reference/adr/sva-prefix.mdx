@@ -1,0 +1,176 @@
+---
+title: "Single-Value Annotations Prefix (2023-04)"
+description: "Supporting custom annotations via the x- prefix"
+---
+
+## Status
+
+**Accepted** - April 4, 2023
+
+## Deciders
+
+@relequestual, @gregsdennis, @jdesrosiers, @karenetheridge, @awwright, @julian
+
+## Context and Problem Statement
+
+Dropping support for unknown keywords was a necessary step toward providing stability guarantees. However, the community's reaction to this news was not encouraging.
+
+**How can we still support keywords that are merely collected as annotations and provide no functionality (single-value annotations, or SVAs)?**
+
+<Info>
+This ADR introduces the `x-` prefix convention, allowing developers to add custom metadata to schemas without breaking stability guarantees.
+</Info>
+
+## Decision Drivers
+
+- **Future-proofing** - Ensure we can still add keywords to the spec without breaking existing schemas
+- **Implementation supportability** - Is the proposal feasible to implement?
+- **Community preference** - What does the community want?
+
+## Considered Options
+
+1. **A defined prefix or other convention for SVAs**
+   - Optionally defined by a new `$sigil` keyword
+2. **Inlined vocabularies** that can define SVAs
+3. **A new core keyword** that lists SVAs, e.g. `$ignored`
+4. **A defined configuration option** to allow/forbid unknown keywords
+5. **A new core keyword** designed for "extra" data
+
+## Decision Outcome
+
+**Chosen option: A defined prefix convention**
+
+Specifically, the prefix **`x-`** has been selected.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "number" }
+  },
+  "x-internal-id": "user-schema-v2",
+  "x-owner": "engineering-team",
+  "x-last-updated": "2023-04-01"
+}
+```
+
+Any keyword starting with `x-` is implicitly treated as an annotation keyword and will be collected during schema evaluation without affecting validation.
+
+## Why This Option?
+
+This option was chosen because:
+
+- ✅ It solves the problem by allowing users to include custom data in their schemas
+- ✅ Many developers will be familiar with using `x-` for custom data (from OpenAPI, HTTP headers, etc.)
+- ✅ It's a simple way to differentiate SVAs from other keywords
+- ✅ It's easily supportable by the meta-schema (using `patternProperties`)
+
+<Warning>
+Some people preferred a different prefix as `x-` in some other contexts denotes "experimental" behavior. In JSON Schema, `x-` simply means "custom annotation" and does not imply experimental status.
+</Warning>
+
+## Pros and Cons of Other Options
+
+<Accordion title="Option 1a: $sigil keyword - Not chosen">
+**Optionally defined by a new `$sigil` keyword**
+
+- ✅ Could give users flexibility for the prefix they want to use
+- ❌ Cannot be supported by the meta-schema without other changes, which may be difficult to define and/or implement
+- ❌ High level of effort
+</Accordion>
+
+<Accordion title="Option 2: Inlined vocabularies - Not chosen">
+**Inlined vocabularies that can define SVAs**
+
+- ✅ Defines the SVAs in a vocabulary which means they are regarded as "known"
+- ❌ We don't have any support for inlined vocabularies at the moment and would have to build that
+- ❌ High level of effort
+</Accordion>
+
+<Accordion title="Option 3: $ignored keyword - Not chosen">
+**A new core keyword that lists SVAs, e.g. `$ignored`**
+
+- ✅ Provides a way to define SVAs
+- ❌ Cannot be supported by the meta-schema without other changes
+- ❌ High level of effort
+</Accordion>
+
+<Accordion title="Option 4: Configuration option - Not chosen">
+**A defined configuration option to allow/forbid unknown keywords**
+
+- ✅ Returns previous functionality (i.e., allowing unknown keywords) to the user
+- ❌ That previous functionality removes/circumvents stability guarantees
+</Accordion>
+
+<Accordion title="Option 5: New core keyword for extra data - Not chosen">
+**A new core keyword designed for "extra" data**
+
+- ✅ Provides a place for users to add extra data
+- ❌ It's an extra depth level that users need to create
+- ❌ Can only generate a single annotation instead of multiple
+</Accordion>
+
+## Consequences
+
+### Positive Consequences
+
+- ✅ Users can include custom metadata in schemas without breaking validation
+- ✅ The convention is familiar to many developers
+- ✅ Simple to implement and understand
+- ✅ Maintains stability guarantees while providing flexibility
+
+### Negative Consequences
+
+- ⚠️ Some developers may misinterpret `x-` as meaning "experimental" rather than "custom"
+
+## Usage Examples
+
+### Custom Metadata
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "email": { "type": "string", "format": "email" }
+  },
+  "x-schema-id": "user-profile",
+  "x-documentation-url": "https://docs.example.com/schemas/user"
+}
+```
+
+### Property-Level Annotations
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["active", "inactive"],
+      "x-display-name": "Account Status",
+      "x-ui-widget": "radio"
+    }
+  }
+}
+```
+
+### Team-Specific Metadata
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "price": { "type": "number" }
+  },
+  "x-owner-team": "pricing",
+  "x-review-status": "approved",
+  "x-last-reviewed": "2023-03-15"
+}
+```
+
+## Related Links
+
+- [Discussion: Disallow Unknown Keywords](https://github.com/orgs/json-schema-org/discussions/241)
+- [Discussion: Support SVAs](https://github.com/orgs/json-schema-org/discussions/329)
+- [PR #1387](https://github.com/json-schema-org/json-schema-spec/pull/1387)

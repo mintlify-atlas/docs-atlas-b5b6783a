@@ -1,0 +1,155 @@
+---
+title: "AdditionalProperties Ambiguity (2022-04)"
+description: "Acknowledging ambiguity in additionalProperties behavior for patch release"
+---
+
+## Status
+
+**Accepted** - May 19, 2022
+
+## Deciders
+
+@relequestual, @gregsdennis, @jdesrosiers, @karenetheridge
+
+## Context and Problem Statement
+
+When we changed the specification to use annotations as the context in which some keywords behave, we included a clause that allowed implementations which didn't use annotations to optimize the processing of `additionalProperties` in another way which produces the same effect as the prior behavior.
+
+This section created an **ambiguity in terms of the resulting output format**, but not validation.
+
+<Warning>
+We needed to decide how to proceed for the patch release of the 2020-12 version of the specification without making functional changes.
+</Warning>
+
+## The Problem
+
+The issue centered around how `additionalProperties` behaves when other keywords fail validation:
+
+1. **Annotation-based approach**: Collect annotations from successful subschemas only
+2. **Optimization approach**: Process `additionalProperties` regardless of assertion results
+
+Both approaches produce the same **validation result**, but different **output formats**.
+
+### Example Scenario
+
+```json
+// Schema
+{
+  "type": "object",
+  "properties": {
+    "foo": { "type": "string" }
+  },
+  "patternProperties": {
+    "^f": { "minLength": 5 }
+  },
+  "additionalProperties": false
+}
+
+// Instance
+{
+  "foo": "bar"
+}
+```
+
+The `patternProperties` subschema fails ("bar" has length 3, needs 5). Should:
+- Approach 1: Discard the pattern annotation, then `additionalProperties` sees "foo" as additional?
+- Approach 2: `additionalProperties` sees the pattern matched "foo" regardless of validation?
+
+## Decision Drivers
+
+- The "patch release" should not change anything functionally
+- Annotations as they are, are confusing to users, implementers, and specification editors alike
+- Patch release is behind schedule
+- There are currently no tests for the output format
+- It's hard to see any immediate consensus on changing the annotation-based behavior
+
+## Considered Options
+
+1. **Leave it "as is"** and do nothing
+2. **Pick one** of the behaviors
+3. **Revert back** to draft-07 behavior
+4. **Reinterpret** how we understand annotation collection
+5. **Acknowledge and accept** that two approaches and results are allowable
+6. **Redefine** annotation collection behavior and/or how `additionalProperties` works
+
+## Decision Outcome
+
+**Chosen option: Acknowledge and accept that two approaches and results are allowable**
+
+This decision was made because:
+
+- Leaving it "as is" will continue to cause confusion
+- The change is non-functional which is required for the patch release
+- The patch release is behind schedule
+- Finding consensus of other solutions proved to be difficult
+- There's no test suite for the output format, so it's not easy to see unintended consequences of a functional change
+- We need to properly re-evaluate annotation collection and how annotations are used by other keywords
+
+<Info>
+Both implementation approaches are considered compliant with the specification.
+</Info>
+
+## Consequences
+
+### Positive Consequences
+
+- ✅ Patch release can move forward
+- ✅ Validation result is not impacted
+- ✅ Confusion is at least seen and acknowledged
+- ✅ Implementations which pick either approach are seen to be compliant
+- ✅ Allows time for proper re-evaluation of annotation collection
+
+### Negative Consequences
+
+- ⚠️ May have an impact for downstream tools which process full output data
+- ⚠️ A test suite (not yet developed) which covers this situation needs to allow for multiple valid answers
+- ⚠️ Different implementations may produce different output formats
+
+## Technical Details
+
+### Approach 1: Strict Annotation-Based
+
+Only collect annotations from successful validation:
+
+```
+1. Evaluate properties → success, annotate "foo"
+2. Evaluate patternProperties → fail, discard annotation
+3. Evaluate additionalProperties:
+   - Only "foo" annotation from properties exists
+   - "foo" is not additional
+   - Result: pass
+```
+
+### Approach 2: Optimization-Based
+
+Consider pattern matches regardless of assertion results:
+
+```
+1. Evaluate properties → success, annotate "foo"
+2. Evaluate patternProperties → fail, but pattern matched "foo"
+3. Evaluate additionalProperties:
+   - "foo" matched by both properties and pattern
+   - "foo" is not additional
+   - Result: pass
+```
+
+## Current Status
+
+This ambiguity was **acknowledged in the 2020-12 patch release** and allowed implementations to choose either approach.
+
+<Note>
+Future releases may resolve this ambiguity by clearly defining annotation collection behavior, but that decision is deferred to avoid functional changes in a patch release.
+</Note>
+
+## Related ADRs
+
+- [Stable Specification (2022-11)](/reference/adr/stable-spec) - This ADR informed the stability-focused approach
+- Related to broader discussions about [annotation collection behavior](/concepts/annotation)
+
+## Related Links
+
+- [Issue #1172: Ambiguous behaviour of additionalProperties when invalid](https://github.com/json-schema-org/json-schema-spec/issues/1172)
+- [Discussion #57: The meaning of "additionalProperties" has changed](https://github.com/json-schema-org/community/discussions/57)
+- [PR #1203: Add CREF about ambiguous behaviour of additionalProperties](https://github.com/json-schema-org/json-schema-spec/pull/1203)
+- [Alternative solution PR #1154](https://github.com/json-schema-org/json-schema-spec/pull/1154)
+- [Discussion #67: Alternative behaviour for unevaluated* keywords](https://github.com/json-schema-org/community/discussions/67)
