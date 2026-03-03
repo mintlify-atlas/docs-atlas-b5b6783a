@@ -1,0 +1,97 @@
+{
+  "projectType": "general",
+  "projectName": "JSON Schema",
+  "projectDescription": "A vocabulary that allows you to validate, annotate, and manipulate JSON documents.",
+  "theme": "linden",
+  "primaryColor": "#1F4788",
+  "lightColor": "#3B82F6",
+  "darkColor": "#1E3A8A",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "understanding-json-schema"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/schemas",
+              "concepts/validation",
+              "concepts/annotation",
+              "concepts/vocabularies"
+            ]
+          },
+          {
+            "group": "Specification",
+            "pages": [
+              "specification/core",
+              "specification/validation",
+              "specification/meta-schemas"
+            ]
+          },
+          {
+            "group": "Development Process",
+            "pages": [
+              "process/overview",
+              "process/lifecycle",
+              "process/proposals",
+              "process/contributing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Keywords",
+            "pages": [
+              "reference/core-keywords",
+              "reference/applicator-keywords",
+              "reference/validation-keywords",
+              "reference/metadata-keywords"
+            ]
+          },
+          {
+            "group": "Architecture Decisions",
+            "pages": [
+              "reference/adr/overview",
+              "reference/adr/stable-spec",
+              "reference/adr/assertion-format"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Vocabulary for validating JSON documents",
+    "Schema-based annotation system",
+    "Extensible vocabulary system",
+    "URI-based schema identification",
+    "Formal IETF specification process",
+    "Meta-schema validation"
+  ],
+  "publicApiSurface": [
+    "$schema keyword",
+    "$id keyword",
+    "$ref keyword",
+    "$vocabulary keyword",
+    "type keyword",
+    "properties keyword",
+    "items keyword",
+    "required keyword",
+    "enum keyword",
+    "const keyword",
+    "Core vocabulary",
+    "Validation vocabulary",
+    "Applicator vocabulary",
+    "Meta-data vocabulary"
+  ]
+}
